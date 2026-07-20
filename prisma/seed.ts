@@ -1,9 +1,11 @@
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
-const adapter = new PrismaBetterSqlite3({
-  url: process.env.DATABASE_URL ?? "file:./dev.db",
-});
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL environment variable is not set");
+}
+const adapter = new PrismaMariaDb(process.env.DATABASE_URL);
 const prisma = new PrismaClient({ adapter });
 
 const staticCourses = [
@@ -583,12 +585,14 @@ async function main() {
     update: {
       passwordHash,
       role: "ADMIN",
+      category: "SUPER_ADMIN",
     },
     create: {
       email: "admin@tekskillup.com",
       name: "Admin User",
       passwordHash,
       role: "ADMIN",
+      category: "SUPER_ADMIN",
       gamification: {
         create: {
           xp: 1500,

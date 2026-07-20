@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
 }
 
 enum Role {
@@ -96,7 +96,7 @@ model Course {
   instructorUserId String?      // real account assignment, for instructor-scoped admin views; `instructor` above stays the free-text display name
   instructorUser   User?        @relation("CourseInstructor", fields: [instructorUserId], references: [id], onDelete: SetNull)
   cover            String
-  description      String
+  description      String       @db.Text
   price            Float        @default(0)
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
@@ -120,7 +120,7 @@ model Lesson {
   title     String
   type      LessonType
   duration  Int
-  content   String         // JSON string of string[]
+  content   String         @db.Text // JSON string of string[]
   videoUrl  String         @default("") // YouTube/Vimeo embed URL or direct .mp4 link
   moduleId  String
   module    Module         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
@@ -131,10 +131,10 @@ model Lesson {
 model QuizQuestion {
   id          String   @id @default(cuid())
   questionId  String   // e.g. "q1"
-  prompt      String
-  options     String   // JSON string of options
+  prompt      String   @db.Text
+  options     String   @db.Text // JSON string of options
   correctId   String
-  explanation String
+  explanation String   @db.Text
   lessonId    String
   lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 }
@@ -149,10 +149,10 @@ model PracticeExam {
 model ExamQuestion {
   id          String       @id @default(cuid())
   questionId  String       // e.g. "ct1"
-  prompt      String
-  options     String       // JSON string of options
+  prompt      String       @db.Text
+  options     String       @db.Text // JSON string of options
   correctId   String
-  explanation String
+  explanation String       @db.Text
   examSlug    String
   exam        PracticeExam @relation(fields: [examSlug], references: [categorySlug], onDelete: Cascade)
 }
@@ -213,7 +213,7 @@ model EmailTemplate {
   name        String
   description String   @default("")
   subject     String
-  body        String
+  body        String   @db.Text
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -243,7 +243,7 @@ model DiscussionComment {
   id        String              @id @default(cuid())
   lessonId  String
   userId    String
-  content   String
+  content   String              @db.Text
   createdAt DateTime            @default(now())
   user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   lesson    Lesson              @relation(fields: [lessonId], references: [id], onDelete: Cascade)
@@ -267,7 +267,7 @@ model Coach {
   name      String
   role      String
   focus     String
-  bio       String
+  bio       String   @db.Text
   accent    String   @default("navy") // navy | orange | green | slate — see Avatar component
   bookable  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -370,7 +370,7 @@ model MembershipPlan {
   name          String
   price         Float
   discountPct   Int                      @default(0)
-  perks         String                   // JSON string array of perk description lines
+  perks         String                   @db.Text // JSON string array of perk description lines
   active        Boolean                  @default(true)
   createdAt     DateTime                 @default(now())
   updatedAt     DateTime                 @updatedAt

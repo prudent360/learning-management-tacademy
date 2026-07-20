@@ -43,6 +43,7 @@ next-env.d.ts
 # database
 /prisma/*.db
 /prisma/*.db-journal
+/prisma/migrations.sqlite-backup
 *.db
 
 # uploaded branding assets (admin-uploaded, not source-controlled)
