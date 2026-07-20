@@ -7,7 +7,15 @@ import { createUserAction } from "@/app/actions/admin";
 import { CATEGORY_LABELS } from "@/components/CategoryBadge";
 import { PlusIcon, CloseIcon, CheckCircleIcon } from "@/components/icons";
 
-const CATEGORY_OPTIONS: Category[] = ["STUDENT", "INSTRUCTOR", "ADMIN", "AFFILIATE", "STAFF"];
+const CATEGORY_OPTIONS: Category[] = [
+  "STUDENT",
+  "AFFILIATE",
+  "STAFF",
+  "INSTRUCTOR",
+  "MANAGER",
+  "ADMIN",
+  "SUPER_ADMIN",
+];
 
 export function AddUserModal() {
   const router = useRouter();

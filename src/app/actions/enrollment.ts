@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getOptionalSession, verifySession } from "@/lib/dal";
 import { GATEWAY_IDS, type GatewayId } from "@/lib/payment-gateways";
 import { notify } from "@/lib/notify";
+import { getMyMembershipDiscount } from "@/app/actions/memberships";
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";
 
@@ -111,11 +112,15 @@ export async function initPaymentAction(
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const currency = orderSettings.currency || "NGN";
 
+  // Apply the student's active membership discount (if any) to the real charge amount.
+  const discountPct = await getMyMembershipDiscount();
+  const price = Math.round(course.price * (1 - discountPct / 100) * 100) / 100;
+
   if (gatewayId === "paystack") {
-    return initPaystackPayment({ secretKey, user, courseSlug, price: course.price, currency, reference, appUrl, userId: session.userId });
+    return initPaystackPayment({ secretKey, user, courseSlug, price, currency, reference, appUrl, userId: session.userId });
   }
 
-  return initFincraPayment({ gateway, publicKey, secretKey, user, courseSlug, price: course.price, currency, reference, appUrl, userId: session.userId });
+  return initFincraPayment({ gateway, publicKey, secretKey, user, courseSlug, price, currency, reference, appUrl, userId: session.userId });
 }
 
 async function initFincraPayment({

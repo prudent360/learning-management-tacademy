@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import { listCoachBookings, cancelCoachBookingAction } from "@/app/actions/coach-booking";
 import { PageHeader } from "@/components/PageHeader";
 import { Avatar } from "@/components/Avatar";
@@ -15,7 +15,7 @@ function formatSessionAt(d: Date) {
 }
 
 export default async function AdminCoachBookingsPage() {
-  await requireAdmin(); // defense in depth, independent of the layout's own check
+  await requirePermission("coach_bookings:view");
   const bookings = await listCoachBookings();
   const now = Date.now();
 

@@ -4,7 +4,13 @@ import { AdminLogoutButton } from "@/components/AdminLogoutButton";
 import { AdminIcon, ArrowLeftIcon } from "@/components/icons";
 import type { CurrentUser } from "@/lib/dal";
 
-export function AdminSidebar({ admin }: { admin: CurrentUser }) {
+export function AdminSidebar({
+  admin,
+  permissions,
+}: {
+  admin: CurrentUser;
+  permissions: string[];
+}) {
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line bg-surface md:flex">
       <div className="px-6 py-5">
@@ -16,7 +22,7 @@ export function AdminSidebar({ admin }: { admin: CurrentUser }) {
         </div>
       </div>
 
-      <AdminNavLinks />
+      <AdminNavLinks permissions={permissions} />
 
       <div className="space-y-1 border-t border-line px-4 py-4">
         <Link

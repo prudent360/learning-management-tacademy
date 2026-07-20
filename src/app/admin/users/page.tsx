@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import { listUsers, type ListUsersFilters } from "@/app/actions/admin";
 import { PageHeader } from "@/components/PageHeader";
 import { Avatar } from "@/components/Avatar";
@@ -16,7 +16,7 @@ export default async function AdminUsersPage({
 }: {
   searchParams: Promise<{ q?: string; category?: string; sort?: string }>;
 }) {
-  await requireAdmin(); // defense in depth, independent of the layout's own check
+  await requirePermission("users:view");
 
   const params = await searchParams;
   const sort = SORTS.includes(params.sort as ListUsersFilters["sort"])

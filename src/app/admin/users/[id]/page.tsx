@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import { getUserDetail } from "@/app/actions/admin";
 import { lessonCount } from "@/lib/courses";
 import { getCourses } from "@/lib/courses-server";
@@ -17,7 +17,7 @@ export default async function AdminUserDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdmin(); // defense in depth, independent of the layout's own check
+  await requirePermission("users:view");
   const { id } = await params;
   const detail = await getUserDetail(id);
   if (!detail) notFound();

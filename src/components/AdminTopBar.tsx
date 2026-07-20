@@ -7,13 +7,13 @@ import { UserMenu } from "@/components/UserMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useCurrentUser } from "@/lib/user-context";
 
-export function AdminTopBar() {
+export function AdminTopBar({ permissions }: { permissions: string[] }) {
   const user = useCurrentUser();
   const firstName = user.name.split(" ")[0];
 
   return (
     <header className="sticky top-0 z-20 flex items-center gap-4 border-b border-line bg-surface px-4 py-3.5 md:px-6 lg:px-8">
-      <AdminMobileNav />
+      <AdminMobileNav permissions={permissions} />
 
       <div className="min-w-0">
         <p className="truncate text-sm font-bold text-slate-800">

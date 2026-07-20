@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import { revalidatePath } from "next/cache";
 
 export type CoachAccent = "navy" | "orange" | "green" | "slate";
@@ -56,7 +56,7 @@ function validate(input: CoachInput): string | null {
 }
 
 export async function createCoachAction(input: CoachInput): Promise<AdminActionResult> {
-  await requireAdmin();
+  await requirePermission("coaches:create");
 
   const error = validate(input);
   if (error) return { success: false, error };
@@ -80,7 +80,7 @@ export async function createCoachAction(input: CoachInput): Promise<AdminActionR
 }
 
 export async function updateCoachAction(id: string, input: CoachInput): Promise<AdminActionResult> {
-  await requireAdmin();
+  await requirePermission("coaches:edit");
 
   const error = validate(input);
   if (error) return { success: false, error };
@@ -105,7 +105,7 @@ export async function updateCoachAction(id: string, input: CoachInput): Promise<
 }
 
 export async function deleteCoachAction(id: string): Promise<AdminActionResult> {
-  await requireAdmin();
+  await requirePermission("coaches:delete");
 
   await prisma.coach.delete({ where: { id } });
 

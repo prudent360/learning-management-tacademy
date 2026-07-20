@@ -2,7 +2,7 @@
 
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 
 export type EnrollmentSource = "free" | "paid" | "granted";
 
@@ -26,12 +26,16 @@ export type EnrollmentRow = {
 };
 
 export async function listEnrollments(filters: ListEnrollmentsFilters = {}): Promise<EnrollmentRow[]> {
-  await requireAdmin();
+  const admin = await requirePermission("enrollments:view");
 
   const { q, courseSlug, sort = "newest" } = filters;
 
+  // Instructors only see enrollments in courses assigned to them.
+  const scopeToInstructor = admin.category === "INSTRUCTOR" ? admin.id : undefined;
+
   const where: Prisma.EnrollmentWhereInput = {
     ...(courseSlug ? { courseSlug } : {}),
+    ...(scopeToInstructor ? { course: { instructorUserId: scopeToInstructor } } : {}),
     ...(q
       ? {
           OR: [
@@ -82,6 +86,10 @@ export async function listEnrollments(filters: ListEnrollmentsFilters = {}): Pro
 }
 
 export async function listEnrollableCourses(): Promise<{ slug: string; title: string }[]> {
-  await requireAdmin();
-  return prisma.course.findMany({ select: { slug: true, title: true }, orderBy: { title: "asc" } });
+  const admin = await requirePermission("enrollments:view");
+  return prisma.course.findMany({
+    where: admin.category === "INSTRUCTOR" ? { instructorUserId: admin.id } : {},
+    select: { slug: true, title: true },
+    orderBy: { title: "asc" },
+  });
 }

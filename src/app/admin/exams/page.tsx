@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import { getPracticeExams } from "@/lib/courses-server";
 import { deletePracticeExamAction } from "@/app/actions/admin-content";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 
 export default async function AdminExamsPage() {
-  await requireAdmin();
+  await requirePermission("exams:view");
   const examsMap = await getPracticeExams();
   const exams = Object.values(examsMap);
 

@@ -16,10 +16,12 @@ enum Role {
 
 enum Category {
   STUDENT
-  INSTRUCTOR
-  ADMIN
   AFFILIATE
   STAFF
+  INSTRUCTOR
+  MANAGER
+  ADMIN
+  SUPER_ADMIN
 }
 
 model User {
@@ -30,6 +32,7 @@ model User {
   role              Role               @default(STUDENT)
   category          Category           @default(STUDENT)
   certificateName   String?
+  country           String?
   createdAt         DateTime           @default(now())
   lessonCompletions LessonCompletion[]
   gamification      Gamification?
@@ -42,6 +45,8 @@ model User {
   payments          Payment[]
   goals             Goal[]
   notifications     Notification[]
+  instructedCourses Course[]           @relation("CourseInstructor")
+  membershipSubscriptions MembershipSubscription[]
   resetToken        String?
   resetTokenExpires DateTime?
 }
@@ -83,19 +88,21 @@ enum LessonType {
 }
 
 model Course {
-  slug        String       @id
-  title       String
-  subtitle    String
-  category    String
-  instructor  String
-  cover       String
-  description String
-  price       Float        @default(0)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  modules     Module[]
-  enrollments Enrollment[]
-  goals       Goal[]
+  slug             String       @id
+  title            String
+  subtitle         String
+  category         String
+  instructor       String
+  instructorUserId String?      // real account assignment, for instructor-scoped admin views; `instructor` above stays the free-text display name
+  instructorUser   User?        @relation("CourseInstructor", fields: [instructorUserId], references: [id], onDelete: SetNull)
+  cover            String
+  description      String
+  price            Float        @default(0)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  modules          Module[]
+  enrollments      Enrollment[]
+  goals            Goal[]
 }
 
 model Module {
@@ -163,6 +170,14 @@ model GeneralSettings {
 model PaymentSettings {
   id        Int      @id @default(1)
   currency  String   @default("USD")
+  updatedAt DateTime @updatedAt
+}
+
+/** Admin-set conversion rate for one non-base currency, for display-only price estimates. */
+model CurrencyRate {
+  code      String   @id // ISO code, e.g. "USD"
+  label     String   // e.g. "US Dollar"
+  rate      Float    // 1 unit of this currency = `rate` units of the base (PaymentSettings.currency)
   updatedAt DateTime @updatedAt
 }
 
@@ -321,4 +336,67 @@ model Payment {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/**
+ * One of the 5 admin-tier roles (super_admin/admin/manager/staff/instructor).
+ * Its `key` matches the corresponding admin-tier Category value (lowercased),
+ * so a user's existing Category is the single source of truth for which
+ * AdminRole applies — no separate role-assignment field needed on User.
+ */
+model AdminRole {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  name        String
+  description String           @default("")
+  isSystem    Boolean          @default(false) // Super Admin — always all permissions, not editable
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  permissions RolePermission[]
+}
+
+model RolePermission {
+  id     String    @id @default(cuid())
+  roleId String
+  role   AdminRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  key    String    // e.g. "courses:edit" — see src/lib/permissions.ts for the full set
+
+  @@unique([roleId, key])
+}
+
+/** Admin-managed subscription tier: a discount % + perks students get on course purchases. */
+model MembershipPlan {
+  id            String                   @id @default(cuid())
+  name          String
+  price         Float
+  discountPct   Int                      @default(0)
+  perks         String                   // JSON string array of perk description lines
+  active        Boolean                  @default(true)
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+  subscriptions MembershipSubscription[]
+}
+
+/**
+ * A student's purchase of a membership plan. Reuses the same one-time
+ * checkout mechanics as course payments (no gateway subscription/recurring
+ * API integration) — "active" means currentPeriodEnd is in the future;
+ * renewing means purchasing again before/after it lapses.
+ */
+model MembershipSubscription {
+  id               String          @id @default(cuid())
+  userId           String
+  planId           String
+  status           String          @default("pending") // pending | active | expired | failed
+  provider         String?
+  providerRef      String?
+  amount           Float?
+  currency         String?
+  currentPeriodEnd DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan             MembershipPlan  @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, planId])
 }

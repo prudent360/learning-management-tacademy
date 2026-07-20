@@ -1,13 +1,28 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import { getCourses } from "@/lib/courses-server";
 import { deleteCourseAction } from "@/app/actions/admin-content";
+import { getOrderCurrency } from "@/app/actions/settings";
+import { formatCurrency } from "@/lib/currency";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import { getUserPermissionKeys } from "@/lib/permissions-server";
 
 export default async function AdminCoursesPage() {
-  await requireAdmin();
-  const courses = await getCourses();
+  const admin = await requirePermission("courses:view");
+  const [allCourses, orderCurrency, permissions] = await Promise.all([
+    getCourses(),
+    getOrderCurrency(),
+    getUserPermissionKeys(admin.id),
+  ]);
+  const currency = orderCurrency.currency;
+  // Instructors only see courses assigned to them; every other admin-tier role sees all courses.
+  const courses =
+    admin.category === "INSTRUCTOR"
+      ? allCourses.filter((c) => c.instructorUserId === admin.id)
+      : allCourses;
+  const canCreate = permissions.has("courses:create");
+  const canDelete = permissions.has("courses:delete");
 
   return (
     <div className="space-y-6">
@@ -15,12 +30,14 @@ export default async function AdminCoursesPage() {
         title="Courses"
         subtitle={`${courses.length} courses`}
         action={
-          <Link
-            href="/admin/courses/new"
-            className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-navy transition-colors hover:bg-white/90"
-          >
-            + Create Course
-          </Link>
+          canCreate ? (
+            <Link
+              href="/admin/courses/new"
+              className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-navy transition-colors hover:bg-white/90"
+            >
+              + Create Course
+            </Link>
+          ) : undefined
         }
       />
 
@@ -49,7 +66,7 @@ export default async function AdminCoursesPage() {
                       {c.modules.reduce((acc, m) => acc + m.lessons.length, 0)} Lessons
                     </span>
                     <span className={`rounded px-2 py-0.5 font-bold ${c.price > 0 ? 'bg-orange/10 text-orange' : 'bg-green-100 text-green-700'}`}>
-                      {c.price > 0 ? `₦${c.price.toLocaleString()}` : 'Free'}
+                      {c.price > 0 ? formatCurrency(c.price, currency) : 'Free'}
                     </span>
                   </div>
                 </div>
@@ -62,10 +79,12 @@ export default async function AdminCoursesPage() {
                 >
                   Edit
                 </Link>
-                <ConfirmDeleteButton
-                  onDelete={deleteCourseAction.bind(null, c.slug)}
-                  itemLabel={c.title}
-                />
+                {canDelete && (
+                  <ConfirmDeleteButton
+                    onDelete={deleteCourseAction.bind(null, c.slug)}
+                    itemLabel={c.title}
+                  />
+                )}
               </div>
             </div>
           ))}

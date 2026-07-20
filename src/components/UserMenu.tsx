@@ -6,6 +6,7 @@ import { Avatar } from "@/components/Avatar";
 import { useCurrentUser } from "@/lib/user-context";
 import { logout } from "@/app/actions/auth";
 import {
+  UserIcon,
   CoursesIcon,
   ProgramIcon,
   SupportIcon,
@@ -18,6 +19,7 @@ export function UserMenu() {
   const user = useCurrentUser();
 
   const links = [
+    { label: "Profile", href: "/profile", icon: UserIcon },
     { label: "My Courses", href: "/my-courses", icon: CoursesIcon },
     { label: "Program Overview", href: "/program-overview", icon: ProgramIcon },
     { label: "Help & Support", href: "/contact-support", icon: SupportIcon },

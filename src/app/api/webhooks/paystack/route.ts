@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { activateMembership } from "@/app/actions/memberships";
 
 /**
  * Paystack webhook handler.
@@ -52,40 +53,57 @@ export async function POST(req: NextRequest) {
       const payment = await prisma.payment.findFirst({
         where: { providerRef: reference, status: "pending" },
       });
+      const membershipSub = payment
+        ? null
+        : await prisma.membershipSubscription.findFirst({
+            where: { providerRef: reference, status: "pending" },
+          });
 
-      if (!payment) {
+      if (!payment && !membershipSub) {
         console.warn("Paystack webhook: no pending payment for ref", reference);
         return NextResponse.json({ status: "ignored" });
       }
 
-      if (data.status === "success") {
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: { status: "success" },
-        });
+      const succeeded = data.status === "success";
 
-        await prisma.enrollment.upsert({
-          where: {
-            userId_courseSlug: {
+      if (payment) {
+        if (succeeded) {
+          await prisma.payment.update({
+            where: { id: payment.id },
+            data: { status: "success" },
+          });
+          await prisma.enrollment.upsert({
+            where: {
+              userId_courseSlug: {
+                userId: payment.userId,
+                courseSlug: payment.courseSlug,
+              },
+            },
+            create: {
               userId: payment.userId,
               courseSlug: payment.courseSlug,
             },
-          },
-          create: {
-            userId: payment.userId,
-            courseSlug: payment.courseSlug,
-          },
-          update: {},
-        });
-
-        console.log(
-          `Paystack webhook: enrolled user ${payment.userId} in course ${payment.courseSlug}`
-        );
-      } else {
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: { status: "failed" },
-        });
+            update: {},
+          });
+          console.log(
+            `Paystack webhook: enrolled user ${payment.userId} in course ${payment.courseSlug}`
+          );
+        } else {
+          await prisma.payment.update({
+            where: { id: payment.id },
+            data: { status: "failed" },
+          });
+        }
+      } else if (membershipSub) {
+        if (succeeded) {
+          await activateMembership(membershipSub.id);
+          console.log(`Paystack webhook: activated membership for user ${membershipSub.userId}`);
+        } else {
+          await prisma.membershipSubscription.update({
+            where: { id: membershipSub.id },
+            data: { status: "failed" },
+          });
+        }
       }
     }
 

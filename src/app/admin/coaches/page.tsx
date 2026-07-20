@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import { listCoaches, deleteCoachAction } from "@/app/actions/coaches";
 import { PageHeader } from "@/components/PageHeader";
 import { Avatar } from "@/components/Avatar";
@@ -6,7 +6,7 @@ import { CoachFormModal } from "@/components/CoachFormModal";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 
 export default async function AdminCoachesPage() {
-  await requireAdmin();
+  await requirePermission("coaches:view");
   const coaches = await listCoaches();
 
   return (

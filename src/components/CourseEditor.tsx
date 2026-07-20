@@ -5,10 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { saveCourseAction } from "@/app/actions/admin-content";
 import { ChevronLeftIcon, TrashIcon, BookIcon, ClipboardIcon } from "@/components/icons";
+import { currencySymbol } from "@/lib/currency";
 import type { Course } from "@/lib/courses";
 
 type CourseEditorProps = {
   course?: Course;
+  currency: string;
+  instructors: { id: string; name: string; email: string }[];
+  canEditInstructorAssignment: boolean;
 };
 
 type ActiveSelection =
@@ -17,7 +21,12 @@ type ActiveSelection =
   | { type: "lesson"; moduleIndex: number; lessonIndex: number }
   | { type: "question"; moduleIndex: number; lessonIndex: number; questionIndex: number };
 
-export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
+export function CourseEditor({
+  course: initialCourse,
+  currency,
+  instructors,
+  canEditInstructorAssignment,
+}: CourseEditorProps) {
   const router = useRouter();
   const [course, setCourse] = useState<any>(
     initialCourse || {
@@ -301,13 +310,36 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Category</label>
-              <input
-                type="text"
-                value={course.category}
-                onChange={(e) => setCourse({ ...course, category: e.target.value })}
-                placeholder="e.g. Numerical Reasoning"
-                className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-navy"
-              />
+              <select
+                value={["Numerical Reasoning", "Interview Prep", "Psychometrics"].includes(course.category) ? course.category : "custom"}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "custom") {
+                    setCourse({ ...course, category: "" });
+                  } else {
+                    setCourse({ ...course, category: val });
+                  }
+                }}
+                className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-navy mb-2"
+              >
+                {["Numerical Reasoning", "Interview Prep", "Psychometrics"].map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+                <option value="custom">Custom Category...</option>
+              </select>
+              
+              {!["Numerical Reasoning", "Interview Prep", "Psychometrics"].includes(course.category) && (
+                <input
+                  type="text"
+                  value={course.category}
+                  onChange={(e) => setCourse({ ...course, category: e.target.value })}
+                  placeholder="Type custom category name..."
+                  className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-navy"
+                  required
+                />
+              )}
             </div>
           </div>
 
@@ -371,19 +403,52 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Course Price</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Course Price ({currency})
+            </label>
             <div className="flex items-center gap-3">
-              <input
-                type="number"
-                min={0}
-                step={100}
-                value={course.price ?? 0}
-                onChange={(e) => setCourse({ ...course, price: Number(e.target.value) || 0 })}
-                placeholder="0"
-                className="w-40 rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-navy"
-              />
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">
+                  {currencySymbol(currency)}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  step={100}
+                  value={course.price ?? 0}
+                  onChange={(e) => setCourse({ ...course, price: Number(e.target.value) || 0 })}
+                  placeholder="0"
+                  className="w-40 rounded-lg border border-line bg-surface py-2 pl-8 pr-3 text-sm outline-none focus:border-navy"
+                />
+              </div>
               <span className="text-xs text-muted">Set to 0 for free courses</span>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Assigned Instructor
+            </label>
+            <select
+              value={course.instructorUserId ?? ""}
+              disabled={!canEditInstructorAssignment}
+              onChange={(e) =>
+                setCourse({ ...course, instructorUserId: e.target.value || null })
+              }
+              className="w-full max-w-sm rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-navy disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <option value="">None assigned</option>
+              {instructors.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.name} ({i.email})
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11px] text-muted">
+              Controls which Instructor-role account sees and can edit this course in the admin
+              panel. Separate from the "Instructor" text field above, which is just the public
+              display name.
+            </p>
           </div>
         </div>
       );

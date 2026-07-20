@@ -1,10 +1,10 @@
-import { requireAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import { getAnalyticsAction } from "@/app/actions/analytics";
 import { AdminAnalyticsView } from "@/components/AdminAnalyticsView";
 import { PageHeader } from "@/components/PageHeader";
 
 export default async function AdminAnalyticsPage() {
-  await requireAdmin();
+  await requirePermission("analytics:view");
   const data = await getAnalyticsAction();
 
   return (

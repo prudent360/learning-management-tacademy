@@ -6,10 +6,12 @@ import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/dal";
+import { requireAdmin, getOptionalSession } from "@/lib/dal";
 import { sendTemplatedEmail } from "@/lib/email";
 import { revalidatePath } from "next/cache";
 import { GATEWAY_IDS, GATEWAY_LABELS, type GatewayId } from "@/lib/payment-gateways";
+import { SUPPORTED_CURRENCIES, CURRENCY_LABELS } from "@/lib/currency";
+import { getCurrencyForCountry } from "@/lib/countries";
 
 export type { GatewayId } from "@/lib/payment-gateways";
 
@@ -216,6 +218,92 @@ export async function getPaymentConfig(): Promise<{ currency: string; gateways: 
       label: GATEWAY_LABELS[g.id as GatewayId] ?? g.id,
     })),
   };
+}
+
+// ---------- Currency conversion rates (display-only price estimates) ----------
+
+export type CurrencyRateRow = { code: string; label: string; rate: number | null };
+
+/** Admin: the base order currency plus every other supported currency and its rate (null = not set yet). */
+export async function getCurrencyRates(): Promise<{
+  baseCurrency: string;
+  rates: CurrencyRateRow[];
+}> {
+  await requireAdmin();
+  const [settings, rows] = await Promise.all([
+    prisma.paymentSettings.upsert({ where: { id: 1 }, update: {}, create: { id: 1 } }),
+    prisma.currencyRate.findMany(),
+  ]);
+
+  const rateByCode = new Map(rows.map((r) => [r.code, r.rate]));
+  const rates = SUPPORTED_CURRENCIES.filter((code) => code !== settings.currency).map((code) => ({
+    code,
+    label: CURRENCY_LABELS[code] ?? code,
+    rate: rateByCode.get(code) ?? null,
+  }));
+
+  return { baseCurrency: settings.currency, rates };
+}
+
+const CurrencyRatesSchema = z.array(
+  z.object({
+    code: z.string(),
+    rate: z.number().positive({ error: "Rate must be a positive number." }).nullable(),
+  }),
+);
+
+export async function updateCurrencyRates(
+  input: z.infer<typeof CurrencyRatesSchema>,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const parsed = CurrencyRatesSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+
+  await Promise.all(
+    parsed.data.map(({ code, rate }) =>
+      rate === null
+        ? prisma.currencyRate.deleteMany({ where: { code } })
+        : prisma.currencyRate.upsert({
+            where: { code },
+            update: { rate },
+            create: { code, label: CURRENCY_LABELS[code] ?? code, rate },
+          }),
+    ),
+  );
+
+  revalidatePath("/admin/settings/currency");
+  return { success: true };
+}
+
+/** Non-admin: the current student's local-currency estimate context, derived from their profile country. Null fields mean "no conversion available — just show the base price." */
+export async function getStudentCurrencyContext(): Promise<{
+  baseCurrency: string;
+  displayCurrency: string | null;
+  rate: number | null;
+}> {
+  const session = await getOptionalSession();
+  const settings = await prisma.paymentSettings.upsert({
+    where: { id: 1 },
+    update: {},
+    create: { id: 1 },
+  });
+  const baseCurrency = settings.currency;
+
+  if (!session) return { baseCurrency, displayCurrency: null, rate: null };
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { country: true },
+  });
+  const targetCurrency = user?.country ? getCurrencyForCountry(user.country) : undefined;
+  if (!targetCurrency || targetCurrency === baseCurrency) {
+    return { baseCurrency, displayCurrency: null, rate: null };
+  }
+
+  const rateRow = await prisma.currencyRate.findUnique({ where: { code: targetCurrency } });
+  if (!rateRow) return { baseCurrency, displayCurrency: null, rate: null };
+
+  return { baseCurrency, displayCurrency: targetCurrency, rate: rateRow.rate };
 }
 
 // ---------- SMTP ----------

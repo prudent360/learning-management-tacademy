@@ -4,7 +4,8 @@ import { CoursePlayer } from "@/components/CoursePlayer";
 import { CourseCheckout } from "@/components/CourseCheckout";
 import { PaymentConfirming } from "@/components/PaymentConfirming";
 import { checkEnrollment } from "@/app/actions/enrollment";
-import { getPaymentConfig } from "@/app/actions/settings";
+import { getPaymentConfig, getStudentCurrencyContext } from "@/app/actions/settings";
+import { getMyMembershipDiscount } from "@/app/actions/memberships";
 import { getOptionalSession } from "@/lib/dal";
 
 export async function generateStaticParams() {
@@ -48,12 +49,19 @@ export default async function CoursePage({
   }
 
   // Not enrolled in a paid course → show checkout
-  const paymentConfig = await getPaymentConfig();
+  const [paymentConfig, currencyContext, membershipDiscountPct] = await Promise.all([
+    getPaymentConfig(),
+    getStudentCurrencyContext(),
+    getMyMembershipDiscount(),
+  ]);
   return (
     <CourseCheckout
       course={course}
       currency={paymentConfig.currency}
       gateways={paymentConfig.gateways}
+      displayCurrency={currencyContext.displayCurrency}
+      displayRate={currencyContext.rate}
+      membershipDiscountPct={membershipDiscountPct}
     />
   );
 }

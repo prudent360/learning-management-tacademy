@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Course } from "@/lib/courses";
 import { lessonCount, courseMinutes } from "@/lib/courses";
 import { useProgress } from "@/lib/useProgress";
-import { formatCurrency } from "@/lib/currency";
+import { formatCurrency, convertDisplayPrice } from "@/lib/currency";
 import { ClockIcon, BookIcon } from "@/components/icons";
 
 function formatPrice(amount: number, currency?: string) {
@@ -14,15 +14,27 @@ function formatPrice(amount: number, currency?: string) {
 export function CourseCard({
   course,
   currency,
+  displayCurrency,
+  displayRate,
 }: {
   course: Course;
   currency?: string;
+  /** Student's local currency, from their profile country — display-only estimate, never the real charge currency. */
+  displayCurrency?: string | null;
+  displayRate?: number | null;
 }) {
   const total = lessonCount(course);
   const { count, ready } = useProgress(course.slug);
   const pct = total ? Math.round((count / total) * 100) : 0;
   const started = count > 0;
   const isFree = course.price <= 0;
+
+  const converted = convertDisplayPrice(
+    course.price,
+    currency || "NGN",
+    displayCurrency,
+    displayRate,
+  );
 
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-line bg-surface transition-shadow hover:shadow-md">
@@ -93,6 +105,11 @@ export function CourseCard({
                 ? "Start course"
                 : `Enroll — ${formatPrice(course.price, currency)}`}
         </Link>
+        {!started && !isFree && converted !== null && displayCurrency && (
+          <p className="mt-1.5 text-center text-[11px] text-muted">
+            ≈ {formatPrice(converted, displayCurrency)}
+          </p>
+        )}
       </div>
     </div>
   );

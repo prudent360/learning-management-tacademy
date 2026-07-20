@@ -2,7 +2,7 @@
 
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser, requireAdmin } from "@/lib/dal";
+import { getCurrentUser, requirePermission } from "@/lib/dal";
 import { revalidatePath } from "next/cache";
 import { sendTemplatedEmail } from "@/lib/email";
 import { notify } from "@/lib/notify";
@@ -116,7 +116,7 @@ export type CoachBookingRow = {
 };
 
 export async function listCoachBookings(): Promise<CoachBookingRow[]> {
-  await requireAdmin();
+  await requirePermission("coach_bookings:view");
   return prisma.coachBooking.findMany({
     select: {
       id: true,
@@ -132,7 +132,7 @@ export async function listCoachBookings(): Promise<CoachBookingRow[]> {
 type AdminActionResult = { success: true } | { success: false; error: string };
 
 export async function cancelCoachBookingAction(bookingId: string): Promise<AdminActionResult> {
-  await requireAdmin();
+  await requirePermission("coach_bookings:delete");
   await prisma.coachBooking.delete({ where: { id: bookingId } });
   revalidatePath("/admin/coach-bookings");
   return { success: true };

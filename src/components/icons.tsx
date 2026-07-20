@@ -379,6 +379,31 @@ export function TargetIcon(p: IconProps) {
   );
 }
 
+export function CrownIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M3 8l4 4 5-7 5 7 4-4-2 11H5L3 8z" />
+    </svg>
+  );
+}
+
+export function ShieldIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z" />
+    </svg>
+  );
+}
+
+export function LockIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  );
+}
+
 export function LinkedInIcon(p: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" {...p}>

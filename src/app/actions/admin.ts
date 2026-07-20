@@ -4,11 +4,19 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { Prisma, type Category } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/dal";
+import { requireAdmin, requirePermission } from "@/lib/dal";
 import { getTodayString } from "@/lib/date";
 import { revalidatePath } from "next/cache";
 
-const CATEGORIES: Category[] = ["STUDENT", "INSTRUCTOR", "ADMIN", "AFFILIATE", "STAFF"];
+const CATEGORIES: Category[] = [
+  "STUDENT",
+  "AFFILIATE",
+  "STAFF",
+  "INSTRUCTOR",
+  "MANAGER",
+  "ADMIN",
+  "SUPER_ADMIN",
+];
 
 export type ListUsersFilters = {
   q?: string;
@@ -17,7 +25,7 @@ export type ListUsersFilters = {
 };
 
 export async function listUsers(filters: ListUsersFilters = {}) {
-  await requireAdmin();
+  await requirePermission("users:view");
 
   const { q, category, sort = "newest" } = filters;
 
@@ -56,6 +64,16 @@ export async function listUsers(filters: ListUsersFilters = {}) {
   });
 }
 
+/** Instructor-category users, for the "Assigned Instructor" picker on the course editor. */
+export async function listInstructors() {
+  await requireAdmin();
+  return prisma.user.findMany({
+    where: { category: "INSTRUCTOR" },
+    select: { id: true, name: true, email: true },
+    orderBy: { name: "asc" },
+  });
+}
+
 export async function getCompletedTodayCount(): Promise<number> {
   await requireAdmin();
   const start = new Date();
@@ -68,7 +86,7 @@ export async function getCompletedTodayCount(): Promise<number> {
 }
 
 export async function getUserDetail(userId: string) {
-  await requireAdmin();
+  await requirePermission("users:view");
   return prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -88,7 +106,7 @@ export async function getUserDetail(userId: string) {
 type AdminActionResult = { success: true } | { success: false; error: string };
 
 export async function resetUserProgress(userId: string): Promise<AdminActionResult> {
-  await requireAdmin();
+  await requirePermission("users:edit");
 
   await prisma.$transaction([
     prisma.lessonCompletion.deleteMany({ where: { userId } }),
@@ -102,9 +120,9 @@ export async function resetUserProgress(userId: string): Promise<AdminActionResu
   return { success: true };
 }
 
-/** A category of ADMIN grants admin-panel access; every other category is a STUDENT-role account. */
+/** Every admin-tier category (Instructor/Staff/Manager/Admin/Super Admin) grants admin-panel access; Student/Affiliate don't. */
 function roleForCategory(category: Category): "STUDENT" | "ADMIN" {
-  return category === "ADMIN" ? "ADMIN" : "STUDENT";
+  return category === "STUDENT" || category === "AFFILIATE" ? "STUDENT" : "ADMIN";
 }
 
 function generatePassword(): string {
@@ -120,7 +138,7 @@ export async function createUserAction(input: {
   email: string;
   category: Category;
 }): Promise<CreateUserResult> {
-  await requireAdmin();
+  await requirePermission("users:create");
 
   const name = input.name.trim();
   const email = input.email.trim().toLowerCase();
@@ -163,7 +181,7 @@ export async function createUserAction(input: {
 }
 
 export async function setUserCategory(userId: string, category: Category): Promise<AdminActionResult> {
-  await requireAdmin();
+  await requirePermission("users:edit");
 
   if (!CATEGORIES.includes(category)) {
     return { success: false, error: "Invalid category." };
@@ -194,7 +212,7 @@ export type BulkImportResult = {
 };
 
 export async function bulkImportUsersAction(rows: BulkImportRow[]): Promise<BulkImportResult> {
-  await requireAdmin();
+  await requirePermission("users:create");
 
   const result: BulkImportResult = { created: 0, skipped: [] };
 

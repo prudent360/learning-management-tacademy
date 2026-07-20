@@ -2,7 +2,7 @@
 
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import { revalidatePath } from "next/cache";
 
 export type PaymentStatus = "pending" | "success" | "failed" | "refunded";
@@ -29,7 +29,7 @@ export type PaymentRow = {
 };
 
 export async function listPayments(filters: ListPaymentsFilters = {}): Promise<PaymentRow[]> {
-  await requireAdmin();
+  await requirePermission("payments:view");
 
   const { q, status, sort = "newest" } = filters;
 
@@ -83,7 +83,7 @@ export type PaymentStats = {
 };
 
 export async function getPaymentStats(): Promise<PaymentStats> {
-  await requireAdmin();
+  await requirePermission("payments:view");
 
   const [revenue, statusCounts] = await Promise.all([
     prisma.payment.groupBy({
@@ -112,7 +112,7 @@ type AdminActionResult = { success: true } | { success: false; error: string };
 
 /** Marks a successful payment as refunded and revokes the associated course access. */
 export async function markPaymentRefunded(paymentId: string): Promise<AdminActionResult> {
-  await requireAdmin();
+  await requirePermission("payments:edit");
 
   const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
   if (!payment) return { success: false, error: "Payment not found." };

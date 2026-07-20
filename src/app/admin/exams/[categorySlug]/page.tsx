@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import { getPracticeExam } from "@/lib/courses-server";
 import { ExamEditor } from "@/components/ExamEditor";
 
@@ -8,7 +8,7 @@ type Props = {
 };
 
 export default async function AdminExamEditPage({ params }: Props) {
-  await requireAdmin();
+  await requirePermission("exams:view");
   const { categorySlug } = await params;
 
   let exam = undefined;

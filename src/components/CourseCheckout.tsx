@@ -5,7 +5,7 @@ import { initPaymentAction, enrollFreeAction } from "@/app/actions/enrollment";
 import type { GatewayId, CheckoutGateway } from "@/app/actions/settings";
 import type { Course } from "@/lib/courses";
 import { lessonCount, courseMinutes } from "@/lib/courses";
-import { formatCurrency } from "@/lib/currency";
+import { formatCurrency, convertDisplayPrice } from "@/lib/currency";
 import {
   BookIcon,
   ClockIcon,
@@ -16,17 +16,30 @@ export function CourseCheckout({
   course,
   currency,
   gateways,
+  displayCurrency,
+  displayRate,
+  membershipDiscountPct = 0,
 }: {
   course: Course;
   currency: string;
   gateways: CheckoutGateway[];
+  /** Student's local currency, from their profile country — display-only estimate, never the real charge currency. */
+  displayCurrency?: string | null;
+  displayRate?: number | null;
+  /** % discount from the student's active membership plan — applied to the real charge too, not just this display. */
+  membershipDiscountPct?: number;
 }) {
   const [pendingGateway, setPendingGateway] = useState<GatewayId | null>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const isFree = course.price <= 0;
+  const hasDiscount = membershipDiscountPct > 0;
+  const finalPrice = hasDiscount
+    ? Math.round(course.price * (1 - membershipDiscountPct / 100) * 100) / 100
+    : course.price;
 
   const formatPrice = (amount: number) => formatCurrency(amount, currency);
+  const converted = convertDisplayPrice(finalPrice, currency, displayCurrency, displayRate);
 
   const handleFreeEnroll = () => {
     setError(null);
@@ -121,9 +134,22 @@ export function CourseCheckout({
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   {isFree ? "Free Course" : "Course Price"}
                 </p>
+                {!isFree && hasDiscount && (
+                  <p className="text-sm text-muted line-through">{formatPrice(course.price)}</p>
+                )}
                 <p className="text-2xl font-bold text-slate-800">
-                  {isFree ? "Free" : formatPrice(course.price)}
+                  {isFree ? "Free" : formatPrice(finalPrice)}
                 </p>
+                {!isFree && hasDiscount && (
+                  <p className="text-xs font-bold text-orange">
+                    {membershipDiscountPct}% member discount applied
+                  </p>
+                )}
+                {!isFree && converted !== null && displayCurrency && (
+                  <p className="text-xs text-muted">
+                    ≈ {formatCurrency(converted, displayCurrency)}
+                  </p>
+                )}
               </div>
 
               {isFree ? (
@@ -149,7 +175,7 @@ export function CourseCheckout({
                     >
                       {pending && pendingGateway === g.id
                         ? "Processing…"
-                        : `Pay ${formatPrice(course.price)} with ${g.label} →`}
+                        : `Pay ${formatPrice(finalPrice)} with ${g.label} →`}
                     </button>
                   ))}
                 </div>

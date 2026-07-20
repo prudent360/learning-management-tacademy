@@ -2,9 +2,10 @@ import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import type { Role } from "@prisma/client";
+import type { Role, Category } from "@prisma/client";
 import { decrypt } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
+import { hasPermission } from "@/lib/permissions-server";
 
 export const verifySession = cache(async () => {
   const cookie = (await cookies()).get("session")?.value;
@@ -31,6 +32,7 @@ export type CurrentUser = {
   email: string;
   certificateName: string | null;
   role: Role;
+  category: Category;
 };
 
 export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
@@ -38,7 +40,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, name: true, email: true, certificateName: true, role: true },
+    select: { id: true, name: true, email: true, certificateName: true, role: true, category: true },
   });
 
   if (!user) {
@@ -56,3 +58,13 @@ export const requireAdmin = cache(async (): Promise<CurrentUser> => {
   }
   return user;
 });
+
+/** Coarse admin gate + a granular permission check (e.g. "courses:edit"). Redirects to /admin if the admin-tier user lacks that specific permission. */
+export async function requirePermission(key: string): Promise<CurrentUser> {
+  const user = await requireAdmin();
+  const allowed = await hasPermission(user.id, key);
+  if (!allowed) {
+    redirect("/admin");
+  }
+  return user;
+}

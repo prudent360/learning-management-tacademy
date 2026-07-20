@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AdminNavLinks } from "@/components/AdminNavLinks";
 import { AdminIcon, ArrowLeftIcon, MenuIcon, CloseIcon } from "@/components/icons";
 
-export function AdminMobileNav() {
+export function AdminMobileNav({ permissions }: { permissions: string[] }) {
   const [open, setOpen] = useState(false);
 
   // Lock body scroll and allow Escape to close while the drawer is open.
@@ -59,7 +59,7 @@ export function AdminMobileNav() {
             <CloseIcon className="h-5 w-5" />
           </button>
         </div>
-        <AdminNavLinks />
+        <AdminNavLinks permissions={permissions} />
         <div className="border-t border-line px-4 py-4">
           <Link
             href="/dashboard"

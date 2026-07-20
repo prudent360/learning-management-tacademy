@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ComponentType, SVGProps } from "react";
 import { requireAdmin } from "@/lib/dal";
+import { getUserPermissionKeys } from "@/lib/permissions-server";
 import { listUsers, getCompletedTodayCount } from "@/app/actions/admin";
 import { getLeaderboardAction } from "@/app/actions/gamification";
 import { getCourses, getPracticeExams } from "@/lib/courses-server";
@@ -24,8 +25,11 @@ function greeting() {
 
 export default async function AdminPage() {
   const admin = await requireAdmin();
+  const permissions = await getUserPermissionKeys(admin.id);
+  const canViewUsers = permissions.has("users:view");
+
   const [users, courses, examsMap, completedToday, leaderboard] = await Promise.all([
-    listUsers(),
+    canViewUsers ? listUsers() : Promise.resolve([]),
     getCourses(),
     getPracticeExams(),
     getCompletedTodayCount(),
@@ -35,6 +39,41 @@ export default async function AdminPage() {
   const recentUsers = users.slice(0, 5);
   const topLearners = leaderboard.xpLeaderboard.slice(0, 5);
   const firstName = admin.name.split(" ")[0];
+
+  const quickActions = [
+    {
+      href: "/admin/users",
+      icon: UserIcon,
+      accent: "navy" as const,
+      title: "Manage Users",
+      description: "View and manage registered users",
+      permission: "users:view",
+    },
+    {
+      href: "/admin/courses",
+      icon: CoursesIcon,
+      accent: "blue" as const,
+      title: "Manage Courses",
+      description: "Create and edit LMS courses",
+      permission: "courses:view",
+    },
+    {
+      href: "/admin/exams",
+      icon: ClipboardIcon,
+      accent: "amber" as const,
+      title: "Manage Exams",
+      description: "Configure practice exams",
+      permission: "exams:view",
+    },
+    {
+      href: "/admin/settings",
+      icon: SettingsIcon,
+      accent: "green" as const,
+      title: "Settings",
+      description: "Payment, SMTP, and general config",
+      permission: "settings:view",
+    },
+  ].filter((a) => permissions.has(a.permission));
 
   return (
     <div className="space-y-6">
@@ -48,7 +87,9 @@ export default async function AdminPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={UserIcon} label="Total Users" value={users.length} accent="navy" />
+        {canViewUsers && (
+          <StatCard icon={UserIcon} label="Total Users" value={users.length} accent="navy" />
+        )}
         <StatCard icon={CoursesIcon} label="Active Courses" value={courses.length} accent="blue" />
         <StatCard icon={ClipboardIcon} label="Exams Configured" value={exams.length} accent="amber" />
         <StatCard icon={CheckCircleIcon} label="Completed Today" value={completedToday} accent="green" />
@@ -57,36 +98,38 @@ export default async function AdminPage() {
       {/* Three-column overview */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         {/* Recent users */}
-        <Panel
-          title="Recent Users"
-          action={
-            <Link href="/admin/users" className="flex items-center gap-1 text-xs font-semibold text-orange hover:underline">
-              View all
-              <ArrowRightIcon className="h-3 w-3" />
-            </Link>
-          }
-        >
-          <div className="space-y-2">
-            {recentUsers.map((u) => (
-              <Link
-                key={u.id}
-                href={`/admin/users/${u.id}`}
-                className="flex items-center gap-3 rounded-xl bg-surface-muted p-3 transition-colors hover:bg-navy-50"
-              >
-                <Avatar name={u.name} accent={u.role === "ADMIN" ? "orange" : "navy"} size={36} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-slate-800">{u.name}</p>
-                  <p className="truncate text-xs text-muted">
-                    {u.role === "ADMIN" ? "Administrator" : "Student"} · {new Date(u.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
+        {canViewUsers && (
+          <Panel
+            title="Recent Users"
+            action={
+              <Link href="/admin/users" className="flex items-center gap-1 text-xs font-semibold text-orange hover:underline">
+                View all
+                <ArrowRightIcon className="h-3 w-3" />
               </Link>
-            ))}
-            {recentUsers.length === 0 && (
-              <p className="py-8 text-center text-sm text-muted">No users yet.</p>
-            )}
-          </div>
-        </Panel>
+            }
+          >
+            <div className="space-y-2">
+              {recentUsers.map((u) => (
+                <Link
+                  key={u.id}
+                  href={`/admin/users/${u.id}`}
+                  className="flex items-center gap-3 rounded-xl bg-surface-muted p-3 transition-colors hover:bg-navy-50"
+                >
+                  <Avatar name={u.name} accent={u.role === "ADMIN" ? "orange" : "navy"} size={36} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-slate-800">{u.name}</p>
+                    <p className="truncate text-xs text-muted">
+                      {u.role === "ADMIN" ? "Administrator" : "Student"} · {new Date(u.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+              {recentUsers.length === 0 && (
+                <p className="py-8 text-center text-sm text-muted">No users yet.</p>
+              )}
+            </div>
+          </Panel>
+        )}
 
         {/* Top learners */}
         <Panel
@@ -118,38 +161,22 @@ export default async function AdminPage() {
         </Panel>
 
         {/* Quick actions */}
-        <Panel title="Quick Actions">
-          <div className="space-y-2">
-            <QuickAction
-              href="/admin/users"
-              icon={UserIcon}
-              accent="navy"
-              title="Manage Users"
-              description="View and manage registered users"
-            />
-            <QuickAction
-              href="/admin/courses"
-              icon={CoursesIcon}
-              accent="blue"
-              title="Manage Courses"
-              description="Create and edit LMS courses"
-            />
-            <QuickAction
-              href="/admin/exams"
-              icon={ClipboardIcon}
-              accent="amber"
-              title="Manage Exams"
-              description="Configure practice exams"
-            />
-            <QuickAction
-              href="/admin/settings"
-              icon={SettingsIcon}
-              accent="green"
-              title="Settings"
-              description="Payment, SMTP, and general config"
-            />
-          </div>
-        </Panel>
+        {quickActions.length > 0 && (
+          <Panel title="Quick Actions">
+            <div className="space-y-2">
+              {quickActions.map((a) => (
+                <QuickAction
+                  key={a.href}
+                  href={a.href}
+                  icon={a.icon}
+                  accent={a.accent}
+                  title={a.title}
+                  description={a.description}
+                />
+              ))}
+            </div>
+          </Panel>
+        )}
       </div>
     </div>
   );

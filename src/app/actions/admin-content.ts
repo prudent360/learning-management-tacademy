@@ -1,19 +1,28 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import { revalidatePath } from "next/cache";
 
 export async function saveCourseAction(courseData: any) {
-  await requireAdmin();
-
-  const { slug, title, subtitle, category, instructor, cover, description, price, modules } = courseData;
+  const { slug, title, subtitle, category, instructor, instructorUserId, cover, description, price, modules } =
+    courseData;
   if (!slug || !title) throw new Error("Missing required fields");
+
+  const existingCourse = await prisma.course.findUnique({ where: { slug } });
+  const admin = await requirePermission(existingCourse ? "courses:edit" : "courses:create");
+
+  if (
+    admin.category === "INSTRUCTOR" &&
+    existingCourse &&
+    existingCourse.instructorUserId !== admin.id
+  ) {
+    throw new Error("You can only edit courses assigned to you.");
+  }
 
   await prisma.$transaction(async (tx) => {
     // Delete existing course if it exists (cascade takes care of modules/lessons)
-    const existing = await tx.course.findUnique({ where: { slug } });
-    if (existing) {
+    if (existingCourse) {
       await tx.course.delete({ where: { slug } });
     }
 
@@ -25,6 +34,7 @@ export async function saveCourseAction(courseData: any) {
         subtitle,
         category,
         instructor,
+        instructorUserId: instructorUserId || null,
         cover,
         description,
         price: Number(price) || 0,
@@ -64,7 +74,7 @@ export async function saveCourseAction(courseData: any) {
 }
 
 export async function deleteCourseAction(slug: string) {
-  await requireAdmin();
+  await requirePermission("courses:delete");
   await prisma.course.delete({ where: { slug } });
   
   revalidatePath("/");
@@ -73,9 +83,11 @@ export async function deleteCourseAction(slug: string) {
 }
 
 export async function savePracticeExamAction(examData: any) {
-  await requireAdmin();
   const { categorySlug, categoryName, durationMinutes, questions } = examData;
   if (!categorySlug || !categoryName) throw new Error("Missing required fields");
+
+  const existing = await prisma.practiceExam.findUnique({ where: { categorySlug } });
+  await requirePermission(existing ? "exams:edit" : "exams:create");
 
   await prisma.$transaction(async (tx) => {
     await tx.practiceExam.upsert({
@@ -113,7 +125,7 @@ export async function savePracticeExamAction(examData: any) {
 }
 
 export async function deletePracticeExamAction(categorySlug: string) {
-  await requireAdmin();
+  await requirePermission("exams:delete");
   await prisma.practiceExam.delete({ where: { categorySlug } });
   
   revalidatePath("/aptitude");

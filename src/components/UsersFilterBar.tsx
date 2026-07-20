@@ -5,7 +5,15 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import type { Category } from "@prisma/client";
 import { CATEGORY_LABELS } from "@/components/CategoryBadge";
 
-const CATEGORY_OPTIONS: Category[] = ["STUDENT", "INSTRUCTOR", "ADMIN", "AFFILIATE", "STAFF"];
+const CATEGORY_OPTIONS: Category[] = [
+  "STUDENT",
+  "AFFILIATE",
+  "STAFF",
+  "INSTRUCTOR",
+  "MANAGER",
+  "ADMIN",
+  "SUPER_ADMIN",
+];
 
 export function UsersFilterBar() {
   const router = useRouter();

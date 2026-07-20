@@ -1,10 +1,13 @@
 import { CourseCard } from "@/components/CourseCard";
 import { getCourses } from "@/lib/courses-server";
-import { getPaymentConfig } from "@/app/actions/settings";
+import { getPaymentConfig, getStudentCurrencyContext } from "@/app/actions/settings";
 
 export default async function MyCoursesPage() {
-  const courses = await getCourses();
-  const paymentConfig = await getPaymentConfig();
+  const [courses, paymentConfig, currencyContext] = await Promise.all([
+    getCourses(),
+    getPaymentConfig(),
+    getStudentCurrencyContext(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -26,6 +29,8 @@ export default async function MyCoursesPage() {
               key={course.slug}
               course={course}
               currency={paymentConfig.currency}
+              displayCurrency={currencyContext.displayCurrency}
+              displayRate={currencyContext.rate}
             />
           ))}
         </div>

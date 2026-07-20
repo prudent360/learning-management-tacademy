@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import {
   listEnrollments,
   listEnrollableCourses,
@@ -21,7 +21,7 @@ export default async function AdminEnrollmentsPage({
 }: {
   searchParams: Promise<{ q?: string; course?: string; sort?: string }>;
 }) {
-  await requireAdmin();
+  await requirePermission("enrollments:view");
 
   const params = await searchParams;
   const sort = SORTS.includes(params.sort as ListEnrollmentsFilters["sort"])

@@ -6,7 +6,15 @@ import type { Category } from "@prisma/client";
 import { setUserCategory } from "@/app/actions/admin";
 import { CATEGORY_LABELS } from "@/components/CategoryBadge";
 
-const CATEGORY_OPTIONS: Category[] = ["STUDENT", "INSTRUCTOR", "ADMIN", "AFFILIATE", "STAFF"];
+const CATEGORY_OPTIONS: Category[] = [
+  "STUDENT",
+  "AFFILIATE",
+  "STAFF",
+  "INSTRUCTOR",
+  "MANAGER",
+  "ADMIN",
+  "SUPER_ADMIN",
+];
 
 export function CategorySelect({ userId, category }: { userId: string; category: Category }) {
   const router = useRouter();

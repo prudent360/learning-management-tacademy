@@ -8,11 +8,13 @@ import {
   MailIcon,
   ClipboardIcon,
   ImageIcon,
+  GlobeIcon,
 } from "@/components/icons";
 
 const tabs = [
   { label: "General", href: "/admin/settings/general", icon: BuildingIcon },
   { label: "Payment", href: "/admin/settings/payment", icon: CreditCardIcon },
+  { label: "Currency Rates", href: "/admin/settings/currency", icon: GlobeIcon },
   { label: "SMTP", href: "/admin/settings/smtp", icon: MailIcon },
   { label: "Email Templates", href: "/admin/settings/email-templates", icon: ClipboardIcon },
   { label: "Branding", href: "/admin/settings/branding", icon: ImageIcon },

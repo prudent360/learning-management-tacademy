@@ -4,12 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { adminNavItems } from "@/lib/nav";
 
-export function AdminNavLinks() {
+export function AdminNavLinks({ permissions }: { permissions: string[] }) {
   const pathname = usePathname();
+  const granted = new Set(permissions);
+  const visibleItems = adminNavItems.filter(
+    (item) => !item.permission || granted.has(item.permission),
+  );
 
   return (
     <nav className="scroll-thin flex flex-1 flex-col gap-1 overflow-y-auto px-4 pb-4">
-      {adminNavItems.map((item) => {
+      {visibleItems.map((item) => {
         const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
         const Icon = item.icon;
         return (

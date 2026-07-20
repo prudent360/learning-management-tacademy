@@ -60,16 +60,28 @@ function OrderCurrencyCard({ initial }: { initial: OrderCurrencyInput }) {
           <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
             Currency
           </label>
-          <input
+          <select
             value={currency}
             onChange={(e) => {
               setSaved(false);
-              setCurrency(e.target.value.toUpperCase());
+              setCurrency(e.target.value);
             }}
-            maxLength={3}
-            placeholder="NGN"
-            className="w-28 rounded-lg border border-line bg-surface px-3 py-2.5 text-sm uppercase outline-none focus:border-navy-600"
-          />
+            className="w-48 rounded-lg border border-line bg-surface px-3 py-2.5 text-sm outline-none focus:border-navy-600"
+          >
+            {[
+              { code: "NGN", name: "Nigerian Naira (₦)" },
+              { code: "USD", name: "US Dollar ($)" },
+              { code: "EUR", name: "Euro (€)" },
+              { code: "GBP", name: "British Pound (£)" },
+              { code: "GHS", name: "Ghanaian Cedi (₵)" },
+              { code: "KES", name: "Kenyan Shilling (KSh)" },
+              { code: "ZAR", name: "South African Rand (R)" },
+            ].map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.code} - {c.name}
+              </option>
+            ))}
+          </select>
         </div>
         <button
           onClick={handleSave}

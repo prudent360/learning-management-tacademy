@@ -37,6 +37,8 @@ export type Course = {
   subtitle: string;
   category: string;
   instructor: string;
+  /** Real account assignment for instructor-scoped admin views; `instructor` above stays the free-text display name. */
+  instructorUserId?: string | null;
   /** Tailwind gradient classes used for the cover banner. */
   cover: string;
   description: string;

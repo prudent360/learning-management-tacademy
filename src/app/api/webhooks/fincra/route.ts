@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { activateMembership } from "@/app/actions/memberships";
 
 /**
  * Fincra webhook handler.
@@ -44,47 +45,61 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "No reference" }, { status: 400 });
       }
 
-      // Find the pending payment
+      // Find the pending payment — could be a course purchase or a membership subscription.
       const payment = await prisma.payment.findFirst({
         where: { providerRef: reference, status: "pending" },
       });
+      const membershipSub = payment
+        ? null
+        : await prisma.membershipSubscription.findFirst({
+            where: { providerRef: reference, status: "pending" },
+          });
 
-      if (!payment) {
+      if (!payment && !membershipSub) {
         console.warn("Fincra webhook: no pending payment for ref", reference);
         return NextResponse.json({ status: "ignored" });
       }
 
-      if (status === "success" || status === "successful") {
-        // Update payment status
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: { status: "success" },
-        });
+      const succeeded = status === "success" || status === "successful";
 
-        // Create enrollment (upsert to prevent duplicates)
-        await prisma.enrollment.upsert({
-          where: {
-            userId_courseSlug: {
+      if (payment) {
+        if (succeeded) {
+          await prisma.payment.update({
+            where: { id: payment.id },
+            data: { status: "success" },
+          });
+          await prisma.enrollment.upsert({
+            where: {
+              userId_courseSlug: {
+                userId: payment.userId,
+                courseSlug: payment.courseSlug,
+              },
+            },
+            create: {
               userId: payment.userId,
               courseSlug: payment.courseSlug,
             },
-          },
-          create: {
-            userId: payment.userId,
-            courseSlug: payment.courseSlug,
-          },
-          update: {},
-        });
-
-        console.log(
-          `Fincra webhook: enrolled user ${payment.userId} in course ${payment.courseSlug}`
-        );
-      } else {
-        // Mark payment as failed
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: { status: "failed" },
-        });
+            update: {},
+          });
+          console.log(
+            `Fincra webhook: enrolled user ${payment.userId} in course ${payment.courseSlug}`
+          );
+        } else {
+          await prisma.payment.update({
+            where: { id: payment.id },
+            data: { status: "failed" },
+          });
+        }
+      } else if (membershipSub) {
+        if (succeeded) {
+          await activateMembership(membershipSub.id);
+          console.log(`Fincra webhook: activated membership for user ${membershipSub.userId}`);
+        } else {
+          await prisma.membershipSubscription.update({
+            where: { id: membershipSub.id },
+            data: { status: "failed" },
+          });
+        }
       }
     }
 

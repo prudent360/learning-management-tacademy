@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import { listPayments, getPaymentStats, type ListPaymentsFilters, type PaymentStatus } from "@/app/actions/admin-payments";
 import { PageHeader } from "@/components/PageHeader";
 import { Avatar } from "@/components/Avatar";
@@ -18,7 +18,7 @@ export default async function AdminPaymentsPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string; sort?: string }>;
 }) {
-  await requireAdmin();
+  await requirePermission("payments:view");
 
   const params = await searchParams;
   const sort = SORTS.includes(params.sort as ListPaymentsFilters["sort"])
