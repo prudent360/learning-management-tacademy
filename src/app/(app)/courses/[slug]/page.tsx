@@ -9,8 +9,13 @@ import { getMyMembershipDiscount } from "@/app/actions/memberships";
 import { getOptionalSession } from "@/lib/dal";
 
 export async function generateStaticParams() {
-  const allCourses = await getCourses();
-  return allCourses.map((c) => ({ slug: c.slug }));
+  try {
+    const allCourses = await getCourses();
+    return allCourses.map((c) => ({ slug: c.slug }));
+  } catch (error) {
+    console.warn("Skipping generateStaticParams due to database connection error/missing credentials during build:", error);
+    return [];
+  }
 }
 
 export default async function CoursePage({

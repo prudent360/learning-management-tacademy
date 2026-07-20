@@ -24,16 +24,21 @@ function toAccent(value: string): CoachAccent {
 
 /** Public roster listing — used on both the marketing homepage and in-app pages, no auth required. */
 export async function listCoaches(): Promise<CoachRecord[]> {
-  const coaches = await prisma.coach.findMany({ orderBy: { createdAt: "asc" } });
-  return coaches.map((c) => ({
-    id: c.id,
-    name: c.name,
-    role: c.role,
-    focus: c.focus,
-    bio: c.bio,
-    accent: toAccent(c.accent),
-    bookable: c.bookable,
-  }));
+  try {
+    const coaches = await prisma.coach.findMany({ orderBy: { createdAt: "asc" } });
+    return coaches.map((c) => ({
+      id: c.id,
+      name: c.name,
+      role: c.role,
+      focus: c.focus,
+      bio: c.bio,
+      accent: toAccent(c.accent),
+      bookable: c.bookable,
+    }));
+  } catch (error) {
+    console.error("Database query failed in listCoaches:", error);
+    return [];
+  }
 }
 
 type AdminActionResult = { success: true } | { success: false; error: string };

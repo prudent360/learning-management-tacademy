@@ -5,10 +5,8 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function createClient() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL environment variable is not set");
-  }
-  const adapter = new PrismaMariaDb(process.env.DATABASE_URL);
+  const url = process.env.DATABASE_URL || "mysql://localhost:3306/placeholder";
+  const adapter = new PrismaMariaDb(url);
   return new PrismaClient({ adapter });
 }
 
