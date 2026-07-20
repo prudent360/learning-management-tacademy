@@ -1,0 +1,324 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum Category {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+  AFFILIATE
+  STAFF
+}
+
+model User {
+  id                String             @id @default(cuid())
+  name              String
+  email             String             @unique
+  passwordHash      String
+  role              Role               @default(STUDENT)
+  category          Category           @default(STUDENT)
+  certificateName   String?
+  createdAt         DateTime           @default(now())
+  lessonCompletions LessonCompletion[]
+  gamification      Gamification?
+  badges            Badge[]
+  certificates      Certificate[]
+  comments          DiscussionComment[]
+  attempts          ExamAttempt[]
+  coachBookings     CoachBooking[]
+  enrollments       Enrollment[]
+  payments          Payment[]
+  goals             Goal[]
+  notifications     Notification[]
+  resetToken        String?
+  resetTokenExpires DateTime?
+}
+
+model LessonCompletion {
+  id          String   @id @default(cuid())
+  userId      String
+  courseSlug  String
+  lessonId    String
+  completedAt DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseSlug, lessonId])
+}
+
+model Gamification {
+  userId     String   @id
+  xp         Int      @default(0)
+  streak     Int      @default(0)
+  lastActive String
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Badge {
+  id         String   @id @default(cuid())
+  userId     String
+  badgeId    String
+  unlockedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+}
+
+enum LessonType {
+  VIDEO
+  READING
+  QUIZ
+}
+
+model Course {
+  slug        String       @id
+  title       String
+  subtitle    String
+  category    String
+  instructor  String
+  cover       String
+  description String
+  price       Float        @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  modules     Module[]
+  enrollments Enrollment[]
+  goals       Goal[]
+}
+
+model Module {
+  id         String   @id @default(cuid())
+  moduleId   String   // e.g. "m1"
+  title      String
+  courseSlug String
+  course     Course   @relation(fields: [courseSlug], references: [slug], onDelete: Cascade)
+  lessons    Lesson[]
+}
+
+model Lesson {
+  id        String         @id @default(cuid())
+  lessonId  String         // e.g. "l1"
+  title     String
+  type      LessonType
+  duration  Int
+  content   String         // JSON string of string[]
+  videoUrl  String         @default("") // YouTube/Vimeo embed URL or direct .mp4 link
+  moduleId  String
+  module    Module         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  questions QuizQuestion[]
+  comments  DiscussionComment[]
+}
+
+model QuizQuestion {
+  id          String   @id @default(cuid())
+  questionId  String   // e.g. "q1"
+  prompt      String
+  options     String   // JSON string of options
+  correctId   String
+  explanation String
+  lessonId    String
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+}
+
+model PracticeExam {
+  categorySlug    String         @id
+  categoryName    String
+  durationMinutes Int
+  questions       ExamQuestion[]
+}
+
+model ExamQuestion {
+  id          String       @id @default(cuid())
+  questionId  String       // e.g. "ct1"
+  prompt      String
+  options     String       // JSON string of options
+  correctId   String
+  explanation String
+  examSlug    String
+  exam        PracticeExam @relation(fields: [examSlug], references: [categorySlug], onDelete: Cascade)
+}
+
+model GeneralSettings {
+  id              Int      @id @default(1)
+  siteName        String   @default("TekSkillUp")
+  supportEmail    String   @default("")
+  timezone        String   @default("UTC")
+  maintenanceMode Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+}
+
+/** Singleton: the currency every course price is denominated in. */
+model PaymentSettings {
+  id        Int      @id @default(1)
+  currency  String   @default("USD")
+  updatedAt DateTime @updatedAt
+}
+
+/** One row per payment processor (id = "fincra" | "paystack"), independently toggleable. */
+model PaymentGateway {
+  id            String   @id // "fincra" | "paystack"
+  enabled       Boolean  @default(false)
+  mode          String   @default("test") // "test" | "live" — which key pair below is active
+  testPublicKey String   @default("")
+  testSecretKey String   @default("") // never returned raw to client
+  livePublicKey String   @default("")
+  liveSecretKey String   @default("") // never returned raw to client
+  webhookSecret String   @default("") // never returned raw to client; Fincra-only, Paystack verifies with its secret key instead
+  encryptionKey String   @default("") // never returned raw to client; Fincra-only, encrypts card details client-side
+  currencies    String   @default("") // comma-separated ISO codes this gateway can charge; empty = accept the order currency unconditionally
+  updatedAt     DateTime @updatedAt
+}
+
+model SmtpSettings {
+  id        Int      @id @default(1)
+  host      String   @default("")
+  port      Int      @default(587)
+  username  String   @default("")
+  password  String   @default("") // never returned raw to client
+  fromName  String   @default("")
+  fromEmail String   @default("")
+  secure    Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+model EmailTemplate {
+  key         String   @id // admin-chosen slug, e.g. "welcome-email"
+  name        String
+  description String   @default("")
+  subject     String
+  body        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BrandingSettings {
+  id            Int      @id @default(1)
+  headerLogo    String? // public path under /uploads/branding, e.g. "/uploads/branding/header-<uuid>.png"
+  footerLogo    String?
+  dashboardLogo String?
+  invoiceLogo   String?
+  updatedAt     DateTime @updatedAt
+}
+
+model Certificate {
+  id          String   @id // e.g. "TSU-4F9A2C" (credentialId)
+  userId      String
+  courseSlug  String
+  studentName String
+  courseTitle String
+  dateIssued  DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseSlug])
+}
+
+model DiscussionComment {
+  id        String              @id @default(cuid())
+  lessonId  String
+  userId    String
+  content   String
+  createdAt DateTime            @default(now())
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson    Lesson              @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    DiscussionComment?  @relation("Replies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   DiscussionComment[] @relation("Replies")
+}
+
+model ExamAttempt {
+  id               String   @id @default(cuid())
+  userId           String
+  examSlug         String   // categorySlug
+  scorePercent     Int
+  timeSpentSeconds Int
+  completedAt      DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Coach {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  focus     String
+  bio       String
+  accent    String   @default("navy") // navy | orange | green | slate — see Avatar component
+  bookable  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CoachBooking {
+  id        String   @id @default(cuid())
+  userId    String
+  coachName String // snapshot of Coach.name at booking time — intentionally not a foreign key so a coach's history survives edits/removal
+  sessionAt DateTime // exact session start time, projected from src/lib/team.ts's weeklySlotTemplates
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([coachName, sessionAt])
+}
+
+model Enrollment {
+  id         String   @id @default(cuid())
+  userId     String
+  courseSlug String
+  enrolledAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course     Course   @relation(fields: [courseSlug], references: [slug], onDelete: Cascade)
+
+  @@unique([userId, courseSlug])
+}
+
+/** A student's self-set target completion date for one enrolled course. */
+model Goal {
+  id         String   @id @default(cuid())
+  userId     String
+  courseSlug String
+  targetDate DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course     Course   @relation(fields: [courseSlug], references: [slug], onDelete: Cascade)
+
+  @@unique([userId, courseSlug])
+}
+
+/** In-app notification, e.g. "enrolled in a course", "certificate issued". */
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   @default("info") // "enrollment" | "certificate" | "coach_booking"
+  title     String
+  href      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  userId      String
+  courseSlug  String
+  amount      Float
+  currency    String
+  provider    String   @default("fincra")
+  providerRef String   // Fincra transaction reference
+  status      String   @default("pending") // pending | success | failed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,28 @@
+# Fly.io app config. Replace `app` with your own app name (must be globally
+# unique) after running `fly launch --no-deploy` once to register it, or edit
+# it here before your first `fly deploy`.
+app = "tekskillup-lms"
+primary_region = "iad" # change to whichever region is closest to your users
+
+[build]
+
+[env]
+  NODE_ENV = "production"
+  # Both point inside the mounted volume — see [mounts] below.
+  DATA_DIR = "/data"
+  DATABASE_URL = "file:/data/prod.db"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "off" # keep a persistent DB connection warm; avoid cold-start data-dir races
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[mounts]]
+  source = "tekskillup_data"
+  destination = "/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

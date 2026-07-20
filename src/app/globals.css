@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+:root {
+  --background: #eef1f6;
+  --foreground: #1f2937;
+
+  /* Brand palette */
+  --navy: #204555;
+  --navy-600: #2d6780;
+  --navy-700: #173745;
+  --navy-50: #edf4f7;
+  --orange: #ff4712;
+  --orange-600: #e63705;
+  --green: #22c55e;
+
+  --surface: #ffffff;
+  --surface-muted: #f5f7fb;
+  --border: #e6eaf1;
+  --text-muted: #6b7280;
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-navy: var(--navy);
+  --color-navy-50: var(--navy-50);
+  --color-navy-600: var(--navy-600);
+  --color-navy-700: var(--navy-700);
+  --color-orange: var(--orange);
+  --color-orange-600: var(--orange-600);
+  /* Tints of the secondary brand color, replacing Tailwind's stock orange
+     scale so badges/highlights (bg-orange-50 text-orange-600, etc.) match. */
+  --color-orange-50: #ffefeb;
+  --color-orange-100: #fedcd2;
+  --color-orange-200: #fbc2b1;
+  --color-brand-green: var(--green);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-line: var(--border);
+  --color-muted: var(--text-muted);
+
+  --font-sans: var(--font-geist-sans);
+
+  /* Override border radius globally to make them smaller and sleeker */
+  --radius-3xl: 12px;
+  --radius-2xl: 10px;
+  --radius-xl: 8px;
+  --radius-lg: 6px;
+  --radius-md: 4px;
+  --radius-sm: 2px;
+
+  /* Remove box shadows from cards and elements */
+  --shadow-sm: none;
+  --shadow: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
+  --shadow-2xl: none;
+}
+
+/* Dark theme: override the base tokens + neutral scale at runtime. */
+:root[data-theme="dark"] {
+  --background: #0b1220;
+  --foreground: #e6eaf2;
+  --surface: #131c2e;
+  --surface-muted: #1b2740;
+  --border: #2a3650;
+  --text-muted: #94a3b8;
+
+  --navy: #59abcf;
+  --navy-600: #3197c4;
+  --navy-700: #297ea3;
+  --navy-50: #1c313b;
+
+  /* Tailwind neutral scale inverted; slate-900 stays dark for overlays. */
+  --color-slate-50: #0e1626;
+  --color-slate-100: #1b2740;
+  --color-slate-200: #26324c;
+  --color-slate-300: #3a4a68;
+  --color-slate-400: #7c8ba6;
+  --color-slate-500: #9aa8be;
+  --color-slate-600: #c4cede;
+  --color-slate-700: #dde3ee;
+  --color-slate-800: #eef2f8;
+  --color-slate-900: #020617;
+
+  /* Tinted accent backgrounds */
+  --color-green-50: #10261a;
+  --color-green-100: #14351f;
+  --color-orange-50: #371910;
+  --color-orange-100: #472015;
+  --color-orange-200: #5b291a;
+  --color-red-50: #3a1620;
+  --color-red-100: #4a1d29;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Toast entrance */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+.toast-enter {
+  animation: toast-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Thin, subtle scrollbars for panels */
+.scroll-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: #cdd5e2;
+  border-radius: 9999px;
+}
+
+/* Skeleton loading shimmer */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 150% 0;
+  }
+  100% {
+    background-position: -50% 0;
+  }
+}
+.skeleton {
+  background-image: linear-gradient(
+    100deg,
+    var(--surface-muted) 30%,
+    var(--border) 50%,
+    var(--surface-muted) 70%
+  );
+  background-size: 250% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
