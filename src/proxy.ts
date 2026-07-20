@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { ADMIN_PATH_PERMISSIONS } from "@/lib/permissions";
 import { getUserPermissionKeys } from "@/lib/permissions-server";
 
-const publicPaths = new Set(["/", "/login", "/register"]);
+const publicPaths = new Set(["/", "/login", "/register", "/forgot-password", "/reset-password"]);
 // Authenticated visitors land on the dashboard, not the marketing homepage.
 const publicOnlyPaths = new Set(["/login", "/register"]);
 
