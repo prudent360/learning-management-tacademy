@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { requirePermission, verifySession, getOptionalSession } from "@/lib/dal";
 import { GATEWAY_IDS, type GatewayId } from "@/lib/payment-gateways";
+import { getAppUrl } from "@/lib/app-url";
 import { revalidatePath } from "next/cache";
 
 type ActionResult = { success: true } | { success: false; error: string };
@@ -255,7 +256,7 @@ export async function initMembershipPaymentAction(
   }
 
   const reference = `TSU-MEM-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = await getAppUrl();
   const currency = orderSettings.currency || "NGN";
 
   await prisma.membershipSubscription.upsert({
@@ -321,10 +322,7 @@ export async function initMembershipPaymentAction(
         customer: { name: user.name, email: user.email },
         reference,
         feeBearer: "customer",
-        redirectUrl: `${appUrl}/membership?payment=success&reference=${reference}`.replace(
-          "localhost",
-          "127.0.0.1",
-        ),
+        redirectUrl: `${appUrl}/membership?payment=success&reference=${reference}`,
         metadata: { type: "membership", planId, userId: session.userId },
       }),
     });

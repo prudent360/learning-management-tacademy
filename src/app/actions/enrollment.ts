@@ -8,6 +8,7 @@ import { notify } from "@/lib/notify";
 import { getMyMembershipDiscount } from "@/app/actions/memberships";
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";
+import { getAppUrl } from "@/lib/app-url";
 
 // ---------- Check Enrollment ----------
 
@@ -109,7 +110,7 @@ export async function initPaymentAction(
   if (!user) return { success: false, error: "User not found" };
 
   const reference = `TSU-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = await getAppUrl();
   const currency = orderSettings.currency || "NGN";
 
   // Apply the student's active membership discount (if any) to the real charge amount.
@@ -157,7 +158,7 @@ async function initFincraPayment({
     },
     reference,
     feeBearer: "customer",
-    redirectUrl: `${appUrl}/courses/${courseSlug}?payment=success&reference=${reference}`.replace("localhost", "127.0.0.1"),
+    redirectUrl: `${appUrl}/courses/${courseSlug}?payment=success&reference=${reference}`,
     metadata: {
       courseSlug,
       userId,

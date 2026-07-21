@@ -9,6 +9,7 @@ import { SignupFormSchema, LoginFormSchema, type FormState } from "@/lib/definit
 import { getTodayString } from "@/lib/date";
 import { sendTemplatedEmail } from "@/lib/email";
 import { checkRateLimit, getClientIp, rateLimitMessage } from "@/lib/rate-limit";
+import { getAppUrl } from "@/lib/app-url";
 
 export async function signup(_state: FormState, formData: FormData): Promise<FormState> {
   const rawName = String(formData.get("name") ?? "");
@@ -131,7 +132,7 @@ export async function forgotPassword(
       data: { resetToken: token, resetTokenExpires: expires },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = await getAppUrl();
     const resetLink = `${appUrl}/reset-password?token=${token}`;
     const siteSettings = await prisma.generalSettings.findUnique({ where: { id: 1 } });
     const siteName = siteSettings?.siteName ?? "TekSkillUp";
