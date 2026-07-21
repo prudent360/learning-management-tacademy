@@ -26,7 +26,12 @@ enum Category {
 
 model User {
   id                String             @id @default(cuid())
-  name              String
+  name              String // derived "First Middle Last" — kept for all existing display code (Avatar, certificates, emails, etc.)
+  firstName         String             @default("")
+  middleName        String?
+  lastName          String             @default("")
+  gender            String? // "male" | "female" | "prefer_not_to_say" | "other"
+  hearAboutUs       String? // e.g. "social_media" | "friend_referral" | "search_engine" | "advertisement" | "other"
   email             String             @unique
   passwordHash      String
   role              Role               @default(STUDENT)
@@ -34,6 +39,9 @@ model User {
   certificateName   String?
   country           String?
   createdAt         DateTime           @default(now())
+  emailVerified     Boolean            @default(true) // default true so existing rows aren't locked out; signup explicitly sets false
+  verificationCode        String?
+  verificationCodeExpires DateTime?
   lessonCompletions LessonCompletion[]
   gamification      Gamification?
   badges            Badge[]

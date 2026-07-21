@@ -5,42 +5,111 @@ import crypto from "crypto";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { createSession, deleteSession } from "@/lib/session";
-import { SignupFormSchema, LoginFormSchema, type FormState } from "@/lib/definitions";
+import {
+  SignupFormSchema,
+  LoginFormSchema,
+  type FormState,
+  type VerifyEmailFormState,
+} from "@/lib/definitions";
 import { getTodayString } from "@/lib/date";
 import { sendTemplatedEmail } from "@/lib/email";
 import { checkRateLimit, getClientIp, rateLimitMessage } from "@/lib/rate-limit";
 import { getAppUrl } from "@/lib/app-url";
 
+const VERIFICATION_CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const VERIFICATION_EMAIL_TEMPLATE_KEY = "email-verification-otp";
+
+function generateVerificationCode(): string {
+  return String(crypto.randomInt(100000, 1000000));
+}
+
+async function ensureVerificationEmailTemplate() {
+  await prisma.emailTemplate.upsert({
+    where: { key: VERIFICATION_EMAIL_TEMPLATE_KEY },
+    update: {},
+    create: {
+      key: VERIFICATION_EMAIL_TEMPLATE_KEY,
+      name: "Email Verification Code",
+      description: "Sent to a user to verify their email address at signup or login",
+      subject: "Your {{site_name}} verification code",
+      body:
+        "<p>Hi {{user_name}},</p>" +
+        "<p>Your verification code is:</p>" +
+        "<p style=\"font-size:28px;font-weight:bold;letter-spacing:4px;\">{{code}}</p>" +
+        "<p>This code expires in 10 minutes. If you didn't request this, you can ignore this email.</p>" +
+        "<p>— The {{site_name}} Team</p>",
+    },
+  });
+}
+
+async function sendVerificationCode(userId: string, name: string, email: string) {
+  const code = generateVerificationCode();
+  const expires = new Date(Date.now() + VERIFICATION_CODE_TTL_MS);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { verificationCode: code, verificationCodeExpires: expires },
+  });
+
+  await ensureVerificationEmailTemplate();
+  const general = await prisma.generalSettings.findUnique({ where: { id: 1 } });
+
+  return sendTemplatedEmail(VERIFICATION_EMAIL_TEMPLATE_KEY, email, {
+    "{{user_name}}": name,
+    "{{code}}": code,
+    "{{site_name}}": general?.siteName || "TekSkillUp",
+  });
+}
+
 export async function signup(_state: FormState, formData: FormData): Promise<FormState> {
-  const rawName = String(formData.get("name") ?? "");
+  const rawFirstName = String(formData.get("firstName") ?? "");
+  const rawMiddleName = String(formData.get("middleName") ?? "");
+  const rawLastName = String(formData.get("lastName") ?? "");
+  const rawGender = String(formData.get("gender") ?? "");
+  const rawHearAboutUs = String(formData.get("hearAboutUs") ?? "");
   const rawEmail = String(formData.get("email") ?? "");
+
+  const echoValues = {
+    firstName: rawFirstName,
+    middleName: rawMiddleName,
+    lastName: rawLastName,
+    gender: rawGender,
+    hearAboutUs: rawHearAboutUs,
+    email: rawEmail,
+  };
 
   const ip = await getClientIp();
   const ipLimit = checkRateLimit(`signup:ip:${ip}`, 5, 60 * 60 * 1000);
   if (!ipLimit.allowed) {
-    return { message: rateLimitMessage(ipLimit), values: { name: rawName, email: rawEmail } };
+    return { message: rateLimitMessage(ipLimit), values: echoValues };
   }
 
   const validatedFields = SignupFormSchema.safeParse({
-    name: rawName,
+    firstName: rawFirstName,
+    middleName: rawMiddleName || undefined,
+    lastName: rawLastName,
+    gender: rawGender,
+    hearAboutUs: rawHearAboutUs,
     email: rawEmail,
     password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
   });
 
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      values: { name: rawName, email: rawEmail },
+      values: echoValues,
     };
   }
 
-  const { name, email, password } = validatedFields.data;
+  const { firstName, middleName, lastName, gender, hearAboutUs, email, password } = validatedFields.data;
+  const name = [firstName, middleName, lastName].filter(Boolean).join(" ");
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     return {
       errors: { email: ["An account with this email already exists."] },
-      values: { name, email },
+      values: echoValues,
     };
   }
 
@@ -48,7 +117,17 @@ export async function signup(_state: FormState, formData: FormData): Promise<For
 
   const user = await prisma.$transaction(async (tx) => {
     const created = await tx.user.create({
-      data: { name, email, passwordHash },
+      data: {
+        name,
+        firstName,
+        middleName: middleName || null,
+        lastName,
+        gender,
+        hearAboutUs,
+        email,
+        passwordHash,
+        emailVerified: false,
+      },
     });
     await tx.gamification.create({
       data: { userId: created.id, xp: 0, streak: 1, lastActive: getTodayString() },
@@ -56,8 +135,8 @@ export async function signup(_state: FormState, formData: FormData): Promise<For
     return created;
   });
 
-  await createSession(user.id);
-  redirect("/dashboard");
+  await sendVerificationCode(user.id, user.name, user.email);
+  redirect(`/verify-email?email=${encodeURIComponent(user.email)}`);
 }
 
 export async function login(_state: FormState, formData: FormData): Promise<FormState> {
@@ -97,8 +176,92 @@ export async function login(_state: FormState, formData: FormData): Promise<Form
     return { message: "Invalid email or password.", values: { email } };
   }
 
+  if (!user.emailVerified) {
+    await sendVerificationCode(user.id, user.name, user.email);
+    redirect(`/verify-email?email=${encodeURIComponent(user.email)}`);
+  }
+
   await createSession(user.id);
   redirect("/dashboard");
+}
+
+export async function verifyEmailAction(
+  _state: VerifyEmailFormState,
+  formData: FormData
+): Promise<VerifyEmailFormState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const code = String(formData.get("code") ?? "").trim();
+
+  if (!email || !code) {
+    return { error: "Enter the code sent to your email." };
+  }
+
+  const ip = await getClientIp();
+  const ipLimit = checkRateLimit(`verify-email:ip:${ip}`, 20, 15 * 60 * 1000);
+  if (!ipLimit.allowed) {
+    return { error: rateLimitMessage(ipLimit) };
+  }
+  const emailLimit = checkRateLimit(`verify-email:email:${email}`, 10, 15 * 60 * 1000);
+  if (!emailLimit.allowed) {
+    return { error: rateLimitMessage(emailLimit) };
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    return { error: "We couldn't find an account with that email." };
+  }
+  if (user.emailVerified) {
+    await createSession(user.id);
+    redirect("/dashboard");
+  }
+  if (
+    !user.verificationCode ||
+    !user.verificationCodeExpires ||
+    user.verificationCodeExpires < new Date()
+  ) {
+    return { error: "That code has expired. Request a new one below." };
+  }
+  if (user.verificationCode !== code) {
+    return { error: "That code isn't right. Please check and try again." };
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { emailVerified: true, verificationCode: null, verificationCodeExpires: null },
+  });
+
+  await createSession(user.id);
+  redirect("/dashboard");
+}
+
+export type ResendCodeResult = { success: true } | { success: false; error: string };
+
+export async function resendVerificationCodeAction(email: string): Promise<ResendCodeResult> {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  const ip = await getClientIp();
+  const ipLimit = checkRateLimit(`resend-code:ip:${ip}`, 10, 15 * 60 * 1000);
+  if (!ipLimit.allowed) {
+    return { success: false, error: rateLimitMessage(ipLimit) };
+  }
+  const emailLimit = checkRateLimit(`resend-code:email:${normalizedEmail}`, 5, 15 * 60 * 1000);
+  if (!emailLimit.allowed) {
+    return { success: false, error: rateLimitMessage(emailLimit) };
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  if (!user) {
+    return { success: false, error: "We couldn't find an account with that email." };
+  }
+  if (user.emailVerified) {
+    return { success: false, error: "This email is already verified — you can log in." };
+  }
+
+  const result = await sendVerificationCode(user.id, user.name, user.email);
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+  return { success: true };
 }
 
 export async function logout() {

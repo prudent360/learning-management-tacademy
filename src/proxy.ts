@@ -3,7 +3,14 @@ import type { NextRequest } from "next/server";
 import { decrypt } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
 
-const publicPaths = new Set(["/", "/login", "/register", "/forgot-password", "/reset-password"]);
+const publicPaths = new Set([
+  "/",
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+]);
 // Authenticated visitors land on the dashboard, not the marketing homepage.
 const publicOnlyPaths = new Set(["/login", "/register"]);
 

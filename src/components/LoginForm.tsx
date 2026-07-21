@@ -2,24 +2,20 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { Logo } from "@/components/Logo";
 import { login } from "@/app/actions/auth";
+import { AuthSplitLayout } from "@/components/AuthSplitLayout";
 
 export function LoginForm() {
   const [state, action, pending] = useActionState(login, undefined);
 
   return (
-    <div className="grid min-h-screen place-items-center bg-background p-4">
+    <AuthSplitLayout
+      heading="Welcome back. Let's keep the momentum going."
+      subheading="Pick up right where you left off — your progress, exams, and coaching sessions are all here."
+    >
       <div className="w-full max-w-sm rounded-2xl bg-surface p-8 shadow-sm">
-        <div className="flex justify-center">
-          <Logo />
-        </div>
-        <h1 className="mt-6 text-center text-lg font-bold text-slate-800">
-          Welcome back
-        </h1>
-        <p className="mt-1 text-center text-sm text-muted">
-          Sign in to your e-Learning Centre
-        </p>
+        <h1 className="text-lg font-bold text-slate-800">Welcome back</h1>
+        <p className="mt-1 text-sm text-muted">Sign in to your e-Learning Centre</p>
 
         <form action={action} className="mt-6 space-y-4">
           <div>
@@ -75,6 +71,6 @@ export function LoginForm() {
           </Link>
         </p>
       </div>
-    </div>
+    </AuthSplitLayout>
   );
 }
