@@ -6,6 +6,8 @@ import { PaymentStatusBadge } from "@/components/PaymentStatusBadge";
 import { PaymentsFilterBar } from "@/components/PaymentsFilterBar";
 import { PaymentsExportButton } from "@/components/PaymentsExportButton";
 import { MarkRefundedButton } from "@/components/MarkRefundedButton";
+import { PendingPaymentActions } from "@/components/PendingPaymentActions";
+import { EditPaymentModal } from "@/components/EditPaymentModal";
 import { formatCurrency } from "@/lib/currency";
 import { CheckCircleIcon, ClockIcon, CloseIcon, ArrowLeftIcon } from "@/components/icons";
 import type { ComponentType, SVGProps } from "react";
@@ -90,7 +92,16 @@ export default async function AdminPaymentsPage({
                 <span>{new Date(p.createdAt).toLocaleDateString()}</span>
               </div>
 
-              {p.status === "success" && <MarkRefundedButton paymentId={p.id} />}
+              <div className="flex shrink-0 items-center gap-2">
+                {p.status === "pending" && <PendingPaymentActions paymentId={p.id} />}
+                {p.status === "success" && <MarkRefundedButton paymentId={p.id} />}
+                <EditPaymentModal
+                  paymentId={p.id}
+                  amount={p.amount}
+                  currency={p.currency}
+                  providerRef={p.providerRef}
+                />
+              </div>
             </div>
           ))}
 

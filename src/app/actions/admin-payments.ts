@@ -130,3 +130,84 @@ export async function markPaymentRefunded(paymentId: string): Promise<AdminActio
   revalidatePath("/admin/payments");
   return { success: true };
 }
+
+/**
+ * Manually approves a pending payment (e.g. a bank transfer reconciled by
+ * hand, or a webhook that never arrived) — mirrors exactly what the Fincra
+ * and Paystack webhooks do on a successful charge: mark it "success" and
+ * grant course access.
+ */
+export async function approvePayment(paymentId: string): Promise<AdminActionResult> {
+  await requirePermission("payments:edit");
+
+  const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
+  if (!payment) return { success: false, error: "Payment not found." };
+  if (payment.status !== "pending") {
+    return { success: false, error: "Only pending payments can be approved." };
+  }
+
+  await prisma.$transaction([
+    prisma.payment.update({ where: { id: paymentId }, data: { status: "success" } }),
+    prisma.enrollment.upsert({
+      where: { userId_courseSlug: { userId: payment.userId, courseSlug: payment.courseSlug } },
+      create: { userId: payment.userId, courseSlug: payment.courseSlug },
+      update: {},
+    }),
+  ]);
+
+  revalidatePath("/admin/payments");
+  return { success: true };
+}
+
+/** Manually rejects a pending payment — no course access is ever granted. */
+export async function rejectPayment(paymentId: string): Promise<AdminActionResult> {
+  await requirePermission("payments:edit");
+
+  const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
+  if (!payment) return { success: false, error: "Payment not found." };
+  if (payment.status !== "pending") {
+    return { success: false, error: "Only pending payments can be rejected." };
+  }
+
+  await prisma.payment.update({ where: { id: paymentId }, data: { status: "failed" } });
+
+  revalidatePath("/admin/payments");
+  return { success: true };
+}
+
+export type EditPaymentInput = {
+  amount: number;
+  currency: string;
+  providerRef: string;
+};
+
+/** Corrects the record itself (e.g. a manual-entry typo) — never changes status or enrollment. */
+export async function updatePaymentDetails(
+  paymentId: string,
+  input: EditPaymentInput,
+): Promise<AdminActionResult> {
+  await requirePermission("payments:edit");
+
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    return { success: false, error: "Amount must be a positive number." };
+  }
+  const currency = input.currency.trim().toUpperCase();
+  if (currency.length !== 3) {
+    return { success: false, error: "Currency must be a 3-letter code." };
+  }
+  const providerRef = input.providerRef.trim();
+  if (!providerRef) {
+    return { success: false, error: "Provider reference is required." };
+  }
+
+  const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
+  if (!payment) return { success: false, error: "Payment not found." };
+
+  await prisma.payment.update({
+    where: { id: paymentId },
+    data: { amount: input.amount, currency, providerRef },
+  });
+
+  revalidatePath("/admin/payments");
+  return { success: true };
+}
