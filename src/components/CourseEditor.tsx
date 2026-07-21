@@ -377,30 +377,15 @@ export function CourseEditor({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Instructor</label>
-              <input
-                type="text"
-                value={course.instructor}
-                onChange={(e) => setCourse({ ...course, instructor: e.target.value })}
-                placeholder="e.g. Dr. John Doe"
-                className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-navy"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Cover Gradient</label>
-              <select
-                value={course.cover}
-                onChange={(e) => setCourse({ ...course, cover: e.target.value })}
-                className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-navy"
-              >
-                <option value="from-navy to-navy-700">Navy Dark (Default)</option>
-                <option value="from-orange to-orange-600">Orange Vibrant</option>
-                <option value="from-slate-700 to-slate-900">Slate Charcoal</option>
-                <option value="from-brand-green to-emerald-600">Green Emerald</option>
-              </select>
-            </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Instructor</label>
+            <input
+              type="text"
+              value={course.instructor}
+              onChange={(e) => setCourse({ ...course, instructor: e.target.value })}
+              placeholder="e.g. Dr. John Doe"
+              className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-navy"
+            />
           </div>
 
           <div>
