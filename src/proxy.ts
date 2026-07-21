@@ -27,14 +27,38 @@ export async function proxy(request: NextRequest) {
 
   const cookie = request.cookies.get("session")?.value;
   const session = await decrypt(cookie);
-  const isAuthed = Boolean(session?.userId);
+  let isAuthed = Boolean(session?.userId);
+
+  // A validly-signed session for a user that no longer exists (e.g. an admin
+  // just deleted the account) must never be treated as authenticated.
+  // Otherwise the deleted user's browser gets stuck bouncing off a
+  // redirect() deep inside a Server Component (getCurrentUser in dal.ts),
+  // which is unreliable under this app's loading.tsx Suspense boundaries —
+  // the same class of bug fixed elsewhere in this file by gating here instead.
+  if (isAuthed) {
+    const user = await prisma.user.findUnique({
+      where: { id: session!.userId },
+      select: { id: true },
+    });
+    if (!user) isAuthed = false;
+  }
 
   if (!isAuthed && !isPublic) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const response = NextResponse.redirect(new URL("/login", request.url));
+    response.cookies.delete("session");
+    return response;
   }
 
   if (isAuthed && isPublicOnly) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  // Stale cookie for a deleted user on an otherwise-public page — clear it
+  // so the next request doesn't repeat this lookup, but let the page load.
+  if (!isAuthed && cookie) {
+    const response = NextResponse.next();
+    response.cookies.delete("session");
+    return response;
   }
 
   // Coach portal gating happens here (before any rendering starts) rather
