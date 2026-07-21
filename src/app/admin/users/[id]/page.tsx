@@ -10,6 +10,8 @@ import { Avatar } from "@/components/Avatar";
 import { ProgressRing } from "@/components/ProgressRing";
 import { CategorySelect } from "@/components/CategorySelect";
 import { ResetProgressButton } from "@/components/ResetProgressButton";
+import { EditUserModal } from "@/components/EditUserModal";
+import { DeleteUserButton } from "@/components/DeleteUserButton";
 import { ArrowLeftIcon } from "@/components/icons";
 
 export default async function AdminUserDetailPage({
@@ -143,6 +145,20 @@ export default async function AdminUserDetailPage({
                 </dd>
               </div>
             </dl>
+            <div className="mt-4">
+              <EditUserModal
+                user={{
+                  id: detail.id,
+                  firstName: detail.firstName,
+                  middleName: detail.middleName,
+                  lastName: detail.lastName,
+                  email: detail.email,
+                  gender: detail.gender,
+                  country: detail.country,
+                  certificateName: detail.certificateName,
+                }}
+              />
+            </div>
           </div>
 
           <div className="space-y-3 rounded-2xl border border-line bg-surface p-5">
@@ -157,6 +173,7 @@ export default async function AdminUserDetailPage({
           <div className="space-y-3 rounded-2xl border border-line bg-surface p-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">Danger zone</p>
             <ResetProgressButton userId={detail.id} />
+            <DeleteUserButton userId={detail.id} userName={detail.name} />
           </div>
         </div>
       </div>

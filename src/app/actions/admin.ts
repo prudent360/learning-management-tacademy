@@ -92,7 +92,13 @@ export async function getUserDetail(userId: string) {
     select: {
       id: true,
       name: true,
+      firstName: true,
+      middleName: true,
+      lastName: true,
       email: true,
+      gender: true,
+      country: true,
+      certificateName: true,
       role: true,
       category: true,
       createdAt: true,
@@ -117,6 +123,67 @@ export async function resetUserProgress(userId: string): Promise<AdminActionResu
     }),
   ]);
 
+  return { success: true };
+}
+
+export type UpdateUserInput = {
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  email: string;
+  gender?: string;
+  country?: string;
+  certificateName?: string;
+};
+
+export async function updateUserAction(userId: string, input: UpdateUserInput): Promise<AdminActionResult> {
+  await requirePermission("users:edit");
+
+  const firstName = input.firstName.trim();
+  const lastName = input.lastName.trim();
+  const middleName = input.middleName?.trim() || "";
+  const email = input.email.trim().toLowerCase();
+
+  if (firstName.length < 2) return { success: false, error: "First name must be at least 2 characters long." };
+  if (lastName.length < 2) return { success: false, error: "Last name must be at least 2 characters long." };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { success: false, error: "Please enter a valid email." };
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing && existing.id !== userId) {
+    return { success: false, error: "Another account already uses this email." };
+  }
+
+  const name = [firstName, middleName, lastName].filter(Boolean).join(" ");
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      firstName,
+      middleName: middleName || null,
+      lastName,
+      name,
+      email,
+      gender: input.gender || null,
+      country: input.country?.trim() || null,
+      certificateName: input.certificateName?.trim() || null,
+    },
+  });
+
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${userId}`);
+  return { success: true };
+}
+
+export async function deleteUserAction(userId: string): Promise<AdminActionResult> {
+  const admin = await requirePermission("users:delete");
+
+  if (admin.id === userId) {
+    return { success: false, error: "You can't delete your own account." };
+  }
+
+  await prisma.user.delete({ where: { id: userId } });
+
+  revalidatePath("/admin/users");
   return { success: true };
 }
 
