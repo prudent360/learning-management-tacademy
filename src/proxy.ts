@@ -10,6 +10,7 @@ const publicPaths = new Set([
   "/forgot-password",
   "/reset-password",
   "/verify-email",
+  "/landing-page",
 ]);
 // Authenticated visitors land on the dashboard, not the marketing homepage.
 const publicOnlyPaths = new Set(["/login", "/register"]);
