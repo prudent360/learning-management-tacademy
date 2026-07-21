@@ -4,12 +4,14 @@ import { getCourses } from "@/lib/courses-server";
 import { lessonCount } from "@/lib/courses";
 import { prisma } from "@/lib/prisma";
 import { listCoaches } from "@/app/actions/coaches";
+import { listActiveMembershipPlans } from "@/app/actions/memberships";
 import { formatCurrency } from "@/lib/currency";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   AptitudeIcon,
   InterviewIcon,
+  PersonalityIcon,
   CoachIcon,
   TrophyIcon,
   GraduationIcon,
@@ -17,6 +19,9 @@ import {
   ClipboardIcon,
   ClockIcon,
   CheckCircleIcon,
+  CheckIcon,
+  ProgramIcon,
+  CrownIcon,
 } from "@/components/icons";
 
 // Draft marketing site for tekskillup.com — not yet linked anywhere, kept
@@ -26,39 +31,70 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Broader than "pass your interview" — this is a full academy, not a
+// single-purpose test-prep tool. See project memory: academy-positioning.
 const pillars = [
   {
     icon: AptitudeIcon,
-    title: "Practice that mirrors the real thing",
-    description: "Timed mock tests across the exact reasoning categories employers actually use.",
+    title: "Practice exams",
+    description:
+      "Timed mock tests across numerical, verbal, mechanical, spatial, and critical reasoning categories.",
   },
   {
     icon: InterviewIcon,
-    title: "A repeatable interview formula",
-    description: "Structure answers, stay composed under pressure, and turn interviews into offers.",
+    title: "Interview mastery",
+    description: "A repeatable system for structuring answers and turning interviews into offers.",
+  },
+  {
+    icon: PersonalityIcon,
+    title: "Personality profiling",
+    description: "Understand how workplace assessments read you, and how to present your strengths.",
   },
   {
     icon: CoachIcon,
-    title: "Real coaches, real feedback",
-    description: "Book 1:1 time with people who've sat on the other side of the hiring table.",
+    title: "1:1 coach sessions",
+    description: "Book real time with coaches for scored, actionable feedback on your progress.",
+  },
+  {
+    icon: TrophyIcon,
+    title: "Gamified progress",
+    description: "XP, streaks, levels, and badges keep you consistent, with a leaderboard to stay sharp.",
   },
   {
     icon: GraduationIcon,
-    title: "A certificate that means something",
-    description: "Finish a course and get a certificate employers can verify, not just a PDF.",
+    title: "Verifiable certificates",
+    description: "Earn a shareable certificate on completion, with a public page employers can verify.",
   },
 ];
 
 export default async function LandingPagePage() {
-  const [courses, paymentSettings, coaches] = await Promise.all([
+  const [courses, paymentSettings, coaches, plans] = await Promise.all([
     getCourses(),
     prisma.paymentSettings.findUnique({ where: { id: 1 } }),
     listCoaches(),
+    listActiveMembershipPlans(),
   ]);
 
   const currency = paymentSettings?.currency || "NGN";
-  const featuredCourses = courses.slice(0, 3);
-  const coachCount = coaches.filter((c) => c.bookable).length;
+  const bookableCoaches = coaches.filter((c) => c.bookable);
+  const coachCount = bookableCoaches.length;
+  const totalLessons = courses.reduce((sum, c) => sum + lessonCount(c), 0);
+
+  const categoryCounts = new Map<string, number>();
+  for (const c of courses) {
+    categoryCounts.set(c.category, (categoryCounts.get(c.category) ?? 0) + 1);
+  }
+  const programs = Array.from(categoryCounts.entries()).map(([name, count]) => ({ name, count }));
+
+  const heroCourse = courses.find((c) => c.cover === "from-navy to-navy-700") ?? courses[0];
+  const catalogCourses = courses.slice(0, 6);
+
+  const stats = [
+    { label: "Courses", value: courses.length },
+    { label: "Lessons", value: `${totalLessons}+` },
+    { label: "Programs", value: programs.length },
+    { label: "Expert coaches", value: coachCount },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -67,12 +103,20 @@ export default async function LandingPagePage() {
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-4 md:px-6">
           <Logo />
           <nav className="ml-8 hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
-            <a href="#pillars" className="hover:text-navy">
-              Why TekSkillUp
+            <a href="#programs" className="hover:text-navy">
+              Programs
             </a>
             <a href="#courses" className="hover:text-navy">
               Courses
             </a>
+            <a href="#pillars" className="hover:text-navy">
+              Why TekSkillUp
+            </a>
+            {plans.length > 0 && (
+              <a href="#plans" className="hover:text-navy">
+                Plans
+              </a>
+            )}
           </nav>
           <div className="ml-auto flex items-center gap-3">
             <ThemeToggle />
@@ -97,15 +141,15 @@ export default async function LandingPagePage() {
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
             <span className="inline-block rounded-full bg-orange-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-orange-600">
-              Career Readiness Platform
+              The TekSkillUp Academy
             </span>
             <h1 className="mt-5 text-4xl font-extrabold leading-tight text-slate-800 md:text-5xl">
-              Walk into your next assessment{" "}
-              <span className="text-navy">already having done the reps.</span>
+              Build career-ready skills{" "}
+              <span className="text-navy">with a real curriculum, not a cram sheet.</span>
             </h1>
             <p className="mt-5 text-lg text-muted">
-              Structured courses, timed practice exams, and 1:1 coaching — built around the reasoning
-              tests, interviews, and career assessments companies actually use.
+              Structured, instructor-led courses across reasoning, interviews, and workplace readiness —
+              with practice exams, 1:1 coaching, gamified progress, and certificates you can prove.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -125,30 +169,28 @@ export default async function LandingPagePage() {
           </div>
 
           {/* Sample course card, matching the style already used across the app */}
-          {featuredCourses[0] && (
+          {heroCourse && (
             <div className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl border border-line bg-surface shadow-lg">
-              <div className={`relative h-28 bg-gradient-to-br ${featuredCourses[0].cover} p-4`}>
+              <div className={`relative h-28 bg-gradient-to-br ${heroCourse.cover} p-4`}>
                 <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-                  {featuredCourses[0].category}
+                  {heroCourse.category}
                 </span>
-                <h3 className="mt-4 text-lg font-bold text-white">{featuredCourses[0].title}</h3>
+                <h3 className="mt-4 text-lg font-bold text-white">{heroCourse.title}</h3>
               </div>
               <div className="p-5">
                 <div className="flex items-center gap-4 text-xs text-muted">
                   <span className="flex items-center gap-1.5">
                     <ClipboardIcon className="h-4 w-4" />
-                    {lessonCount(featuredCourses[0])} lessons
+                    {lessonCount(heroCourse)} lessons
                   </span>
                   <span className="flex items-center gap-1.5">
                     <ClockIcon className="h-4 w-4" />
-                    by {featuredCourses[0].instructor}
+                    by {heroCourse.instructor}
                   </span>
                 </div>
                 <div className="mt-4 flex items-center justify-between">
                   <span className="text-sm font-extrabold text-slate-800">
-                    {featuredCourses[0].price > 0
-                      ? formatCurrency(featuredCourses[0].price, currency)
-                      : "Free"}
+                    {heroCourse.price > 0 ? formatCurrency(heroCourse.price, currency) : "Free"}
                   </span>
                   <Link
                     href="/register"
@@ -162,15 +204,60 @@ export default async function LandingPagePage() {
             </div>
           )}
         </div>
+
+        <div className="mx-auto mt-14 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
+          {stats.map((s) => (
+            <div key={s.label} className="rounded-2xl border border-line bg-surface p-4 text-center">
+              <p className="text-2xl font-extrabold text-slate-800">{s.value}</p>
+              <p className="mt-1 text-xs font-medium text-muted">{s.label}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
-      {/* Pillars */}
-      <section id="pillars" className="border-t border-line bg-surface-muted/50 py-16 md:py-20">
+      {/* Programs */}
+      {programs.length > 0 && (
+        <section id="programs" className="border-t border-line bg-surface-muted/50 py-16 md:py-20">
+          <div className="mx-auto max-w-6xl px-4 md:px-6">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="text-2xl font-extrabold text-slate-800 md:text-3xl">Explore programs</h2>
+              <p className="mt-3 text-muted">
+                A growing catalog organized around the skills that move careers forward.
+              </p>
+            </div>
+            <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {programs.map((p) => (
+                <a
+                  key={p.name}
+                  href="#courses"
+                  className="flex items-center gap-3 rounded-xl border border-line bg-surface p-4 transition-colors hover:border-navy/40"
+                >
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-navy-50 text-navy">
+                    <ProgramIcon className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-slate-800">{p.name}</p>
+                    <p className="text-xs text-muted">
+                      {p.count} course{p.count === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Why TekSkillUp */}
+      <section id="pillars" className="py-16 md:py-20">
         <div className="mx-auto max-w-6xl px-4 md:px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-extrabold text-slate-800 md:text-3xl">Why TekSkillUp</h2>
+            <h2 className="text-2xl font-extrabold text-slate-800 md:text-3xl">
+              Everything an academy should have
+            </h2>
+            <p className="mt-3 text-muted">One platform, not six disconnected tools.</p>
           </div>
-          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {pillars.map((p) => (
               <div key={p.title} className="rounded-2xl border border-line bg-surface p-6">
                 <span className="grid h-12 w-12 place-items-center rounded-xl bg-navy-50 text-navy">
@@ -185,15 +272,15 @@ export default async function LandingPagePage() {
       </section>
 
       {/* Courses */}
-      {featuredCourses.length > 0 && (
-        <section id="courses" className="py-16 md:py-20">
+      {catalogCourses.length > 0 && (
+        <section id="courses" className="border-t border-line bg-surface-muted/50 py-16 md:py-20">
           <div className="mx-auto max-w-6xl px-4 md:px-6">
             <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-2xl font-extrabold text-slate-800 md:text-3xl">Popular courses</h2>
-              <p className="mt-3 text-muted">Structured, instructor-led, and built around real assessment formats.</p>
+              <h2 className="text-2xl font-extrabold text-slate-800 md:text-3xl">Courses to get you there</h2>
+              <p className="mt-3 text-muted">Structured, instructor-led, and built around real outcomes.</p>
             </div>
             <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {featuredCourses.map((c) => {
+              {catalogCourses.map((c) => {
                 const isFree = c.price <= 0;
                 return (
                   <div
@@ -233,12 +320,90 @@ export default async function LandingPagePage() {
         </section>
       )}
 
+      {/* Coaches */}
+      {bookableCoaches.length > 0 && (
+        <section id="coaches" className="py-16 md:py-20">
+          <div className="mx-auto max-w-6xl px-4 md:px-6">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="text-2xl font-extrabold text-slate-800 md:text-3xl">
+                Learn from people who've done it
+              </h2>
+              <p className="mt-3 text-muted">Book 1:1 time with coaches who've sat on the other side of the table.</p>
+            </div>
+            <div className="mt-10 flex flex-wrap justify-center gap-5">
+              {bookableCoaches.map((m) => (
+                <div
+                  key={m.id}
+                  className="w-full max-w-[15rem] flex-1 rounded-2xl border border-line bg-surface p-5 text-center sm:min-w-[15rem]"
+                >
+                  <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-navy-50 text-lg font-bold text-navy">
+                    {m.name
+                      .split(" ")
+                      .map((p) => p[0])
+                      .slice(-2)
+                      .join("")}
+                  </div>
+                  <p className="mt-3 text-sm font-bold text-slate-800">{m.name}</p>
+                  <p className="text-xs font-medium text-orange">{m.role}</p>
+                  <p className="mt-1 text-xs text-muted">{m.focus}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Membership plans */}
+      {plans.length > 0 && (
+        <section id="plans" className="border-t border-line bg-surface-muted/50 py-16 md:py-20">
+          <div className="mx-auto max-w-6xl px-4 md:px-6">
+            <div className="mx-auto max-w-2xl text-center">
+              <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-orange-50 text-orange">
+                <CrownIcon className="h-5 w-5" />
+              </span>
+              <h2 className="mt-3 text-2xl font-extrabold text-slate-800 md:text-3xl">Go further with membership</h2>
+              <p className="mt-3 text-muted">Discounted courses and extra perks for committed learners.</p>
+            </div>
+            <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {plans.map((plan) => (
+                <div key={plan.id} className="flex flex-col rounded-2xl border border-line bg-surface p-6">
+                  <h3 className="text-base font-bold text-slate-800">{plan.name}</h3>
+                  <p className="mt-2 text-2xl font-extrabold text-slate-800">
+                    {formatCurrency(plan.price, currency)}
+                    <span className="text-sm font-medium text-muted">/mo</span>
+                  </p>
+                  {plan.discountPct > 0 && (
+                    <p className="mt-1 text-xs font-semibold text-orange">
+                      {plan.discountPct}% off every course
+                    </p>
+                  )}
+                  <ul className="mt-4 flex-1 space-y-2">
+                    {plan.perks.map((perk: string) => (
+                      <li key={perk} className="flex items-start gap-2 text-sm text-muted">
+                        <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-green" />
+                        {perk}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/register"
+                    className="mt-5 rounded-lg bg-navy px-4 py-2.5 text-center text-sm font-bold text-white transition-colors hover:bg-navy-700"
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Final CTA */}
       <section className="border-t border-line py-16 md:py-20">
         <div className="mx-auto max-w-3xl rounded-2xl bg-navy px-6 py-12 text-center md:px-12">
-          <h2 className="text-2xl font-extrabold text-white md:text-3xl">Ready to start preparing?</h2>
+          <h2 className="text-2xl font-extrabold text-white md:text-3xl">Ready to start learning?</h2>
           <p className="mt-3 text-white/70">
-            Create your free account and take your first practice exam today
+            Create your free account and take your first course today
             {coachCount > 0
               ? `, or book time with ${coachCount === 1 ? "our coach" : `one of our ${coachCount} coaches`}.`
               : "."}
@@ -263,21 +428,54 @@ export default async function LandingPagePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-line py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 text-center md:flex-row md:justify-between md:px-6 md:text-left">
-          <Logo />
-          <div className="flex items-center gap-6 text-sm font-medium text-muted">
-            <Link href="/login" className="hover:text-navy">
-              Log in
-            </Link>
-            <Link href="/register" className="hover:text-navy">
-              Register
-            </Link>
-            <Link href="/verify" className="hover:text-navy">
-              Verify Certificate
-            </Link>
+      <footer className="border-t border-line py-12">
+        <div className="mx-auto max-w-6xl px-4 md:px-6">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+            <div className="col-span-2 sm:col-span-1">
+              <Logo />
+              <p className="mt-3 text-xs text-muted">
+                The academy for career-ready skills — courses, coaching, and certificates in one place.
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Learn</p>
+              <div className="mt-3 flex flex-col gap-2 text-sm text-muted">
+                <a href="#programs" className="hover:text-navy">
+                  Programs
+                </a>
+                <a href="#courses" className="hover:text-navy">
+                  Courses
+                </a>
+                {plans.length > 0 && (
+                  <a href="#plans" className="hover:text-navy">
+                    Membership
+                  </a>
+                )}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Account</p>
+              <div className="mt-3 flex flex-col gap-2 text-sm text-muted">
+                <Link href="/login" className="hover:text-navy">
+                  Log in
+                </Link>
+                <Link href="/register" className="hover:text-navy">
+                  Register
+                </Link>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Trust</p>
+              <div className="mt-3 flex flex-col gap-2 text-sm text-muted">
+                <Link href="/verify" className="hover:text-navy">
+                  Verify Certificate
+                </Link>
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-muted">© {new Date().getFullYear()} TekSkillUp. All rights reserved.</p>
+          <p className="mt-10 border-t border-line pt-6 text-xs text-muted">
+            © {new Date().getFullYear()} TekSkillUp. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>
