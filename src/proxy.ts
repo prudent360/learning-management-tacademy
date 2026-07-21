@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { decrypt } from "@/lib/jwt";
+import { prisma } from "@/lib/prisma";
 
 const publicPaths = new Set(["/", "/login", "/register", "/forgot-password", "/reset-password"]);
 // Authenticated visitors land on the dashboard, not the marketing homepage.
@@ -27,6 +28,20 @@ export async function proxy(request: NextRequest) {
 
   if (isAuthed && isPublicOnly) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  // Coach portal gating happens here (before any rendering starts) rather
+  // than via redirect() inside the page — see requireCoach() in dal.ts for
+  // why: a page-level redirect() is unreliable under this route's loading.tsx
+  // Suspense boundary in this app's Next.js version.
+  if (isAuthed && request.method === "GET" && pathname.startsWith("/coach")) {
+    const coach = await prisma.coach.findUnique({
+      where: { userId: session!.userId },
+      select: { id: true },
+    });
+    if (!coach) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
   }
 
   return NextResponse.next();

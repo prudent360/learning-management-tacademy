@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { activateMembership } from "@/app/actions/memberships";
+import { ensureEnrollment } from "@/app/actions/enrollment";
 
 /**
  * Paystack webhook handler.
@@ -72,19 +73,7 @@ export async function POST(req: NextRequest) {
             where: { id: payment.id },
             data: { status: "success" },
           });
-          await prisma.enrollment.upsert({
-            where: {
-              userId_courseSlug: {
-                userId: payment.userId,
-                courseSlug: payment.courseSlug,
-              },
-            },
-            create: {
-              userId: payment.userId,
-              courseSlug: payment.courseSlug,
-            },
-            update: {},
-          });
+          await ensureEnrollment(payment.userId, payment.courseSlug);
           console.log(
             `Paystack webhook: enrolled user ${payment.userId} in course ${payment.courseSlug}`
           );

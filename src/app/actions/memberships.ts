@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission, verifySession, getOptionalSession } from "@/lib/dal";
 import { GATEWAY_IDS, type GatewayId } from "@/lib/payment-gateways";
 import { getAppUrl } from "@/lib/app-url";
+import { notify } from "@/lib/notify";
 import { revalidatePath } from "next/cache";
 
 type ActionResult = { success: true } | { success: false; error: string };
@@ -430,8 +431,15 @@ export async function verifyMembershipAction(reference: string): Promise<VerifyM
 
 export async function activateMembership(subscriptionId: string) {
   const currentPeriodEnd = new Date(Date.now() + SUBSCRIPTION_PERIOD_DAYS * 24 * 60 * 60 * 1000);
-  await prisma.membershipSubscription.update({
+  const sub = await prisma.membershipSubscription.update({
     where: { id: subscriptionId },
     data: { status: "active", currentPeriodEnd },
+    include: { plan: true },
   });
+  await notify(
+    sub.userId,
+    "membership",
+    `Your ${sub.plan.name} membership is active!`,
+    "/membership",
+  );
 }

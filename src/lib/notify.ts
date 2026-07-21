@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 
-export type NotificationKind = "enrollment" | "certificate" | "coach_booking";
+export type NotificationKind = "enrollment" | "certificate" | "coach_booking" | "membership";
 
 /** Creates an in-app notification for one user. Call from server actions after the real event succeeds. */
 export async function notify(

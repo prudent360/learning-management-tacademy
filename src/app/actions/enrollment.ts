@@ -25,6 +25,19 @@ export async function checkEnrollment(
   return { enrolled: !!enrollment };
 }
 
+/** Slugs of every course the current student has actually enrolled in (free or paid) — powers "My Courses". */
+export async function getMyEnrolledCourseSlugs(): Promise<string[]> {
+  const session = await getOptionalSession();
+  if (!session) return [];
+
+  const enrollments = await prisma.enrollment.findMany({
+    where: { userId: session.userId },
+    select: { courseSlug: true },
+  });
+
+  return enrollments.map((e) => e.courseSlug);
+}
+
 // ---------- Free Enrollment ----------
 
 export async function enrollFreeAction(
@@ -395,7 +408,7 @@ export async function verifyAndEnrollAction(
   return { enrolled: false };
 }
 
-async function ensureEnrollment(userId: string, courseSlug: string) {
+export async function ensureEnrollment(userId: string, courseSlug: string) {
   const existing = await prisma.enrollment.findUnique({
     where: { userId_courseSlug: { userId, courseSlug } },
   });

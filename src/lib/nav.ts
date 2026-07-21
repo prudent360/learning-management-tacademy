@@ -20,6 +20,7 @@ import {
   TargetIcon,
   ShieldIcon,
   CrownIcon,
+  BookIcon,
 } from "@/components/icons";
 
 export type NavItem = {
@@ -33,6 +34,7 @@ export type AdminNavItem = NavItem & { exact?: boolean; permission?: string };
 
 export const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: DashboardIcon },
+  { label: "Courses", href: "/courses", icon: BookIcon },
   { label: "My Courses", href: "/my-courses", icon: CoursesIcon },
   { label: "Membership", href: "/membership", icon: CrownIcon },
   { label: "Study Planner", href: "/study-planner", icon: TargetIcon },

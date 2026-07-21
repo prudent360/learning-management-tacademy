@@ -1,4 +1,4 @@
-import { weeklySlotTemplates } from "@/lib/team";
+export type SlotTemplate = { weekday: number; time: string };
 
 export type UpcomingSlot = { sessionAt: string; label: string };
 
@@ -9,8 +9,8 @@ function formatSlotLabel(d: Date): string {
   return `${weekday}, ${month} ${d.getDate()} · ${time}`;
 }
 
-/** Projects the weekly recurring templates onto real calendar dates over the next `daysAhead` days. */
-export function getUpcomingSlots(daysAhead = 14): UpcomingSlot[] {
+/** Projects a coach's own weekly recurring availability onto real calendar dates over the next `daysAhead` days. */
+export function getUpcomingSlots(templates: SlotTemplate[], daysAhead = 14): UpcomingSlot[] {
   const now = new Date();
   const results: UpcomingSlot[] = [];
 
@@ -18,7 +18,7 @@ export function getUpcomingSlots(daysAhead = 14): UpcomingSlot[] {
     const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
     const weekday = date.getDay();
 
-    for (const tpl of weeklySlotTemplates) {
+    for (const tpl of templates) {
       if (tpl.weekday !== weekday) continue;
       const [hour, minute] = tpl.time.split(":").map(Number);
       const sessionAt = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute, 0, 0);

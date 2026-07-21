@@ -3,6 +3,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/dal";
+import { ensureEnrollment } from "@/app/actions/enrollment";
 import { revalidatePath } from "next/cache";
 
 export type PaymentStatus = "pending" | "success" | "failed" | "refunded";
@@ -146,14 +147,8 @@ export async function approvePayment(paymentId: string): Promise<AdminActionResu
     return { success: false, error: "Only pending payments can be approved." };
   }
 
-  await prisma.$transaction([
-    prisma.payment.update({ where: { id: paymentId }, data: { status: "success" } }),
-    prisma.enrollment.upsert({
-      where: { userId_courseSlug: { userId: payment.userId, courseSlug: payment.courseSlug } },
-      create: { userId: payment.userId, courseSlug: payment.courseSlug },
-      update: {},
-    }),
-  ]);
+  await prisma.payment.update({ where: { id: paymentId }, data: { status: "success" } });
+  await ensureEnrollment(payment.userId, payment.courseSlug);
 
   revalidatePath("/admin/payments");
   return { success: true };

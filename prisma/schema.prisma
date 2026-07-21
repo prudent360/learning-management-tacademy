@@ -46,6 +46,7 @@ model User {
   goals             Goal[]
   notifications     Notification[]
   instructedCourses Course[]           @relation("CourseInstructor")
+  coachProfile      Coach?             @relation("CoachAccount")
   membershipSubscriptions MembershipSubscription[]
   resetToken        String?
   resetTokenExpires DateTime?
@@ -264,24 +265,41 @@ model ExamAttempt {
 }
 
 model Coach {
-  id        String   @id @default(cuid())
-  name      String
-  role      String
-  focus     String
-  bio       String   @db.Text
-  accent    String   @default("navy") // navy | orange | green | slate — see Avatar component
-  bookable  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String               @id @default(cuid())
+  name         String
+  role         String
+  focus        String
+  bio          String               @db.Text
+  accent       String               @default("navy") // navy | orange | green | slate — see Avatar component
+  bookable     Boolean              @default(true)
+  userId       String?              @unique // linked login for the coach portal (/coach) — nullable so legacy/unlinked coach records still work
+  user         User?                @relation("CoachAccount", fields: [userId], references: [id], onDelete: SetNull)
+  availability CoachAvailability[]
+  bookings     CoachBooking[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+}
+
+/** A coach's own weekly recurring availability, self-managed from the coach portal — replaces the old shared static template. */
+model CoachAvailability {
+  id       String @id @default(cuid())
+  coachId  String
+  weekday  Int // follows Date.getDay() (0=Sun..6=Sat)
+  time     String // "HH:MM", 24-hour
+  coach    Coach  @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@unique([coachId, weekday, time])
 }
 
 model CoachBooking {
   id        String   @id @default(cuid())
   userId    String
+  coachId   String? // nullable so a coach's booking history survives the Coach record being deleted
   coachName String // snapshot of Coach.name at booking time — intentionally not a foreign key so a coach's history survives edits/removal
-  sessionAt DateTime // exact session start time, projected from src/lib/team.ts's weeklySlotTemplates
+  sessionAt DateTime // exact session start time, projected from the coach's own CoachAvailability
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coach     Coach?   @relation(fields: [coachId], references: [id], onDelete: SetNull)
 
   @@unique([coachName, sessionAt])
 }

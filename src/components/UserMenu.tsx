@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Menu } from "@/components/Menu";
 import { Avatar } from "@/components/Avatar";
 import { useCurrentUser } from "@/lib/user-context";
 import { logout } from "@/app/actions/auth";
+import { amICoach } from "@/app/actions/coaches";
 import {
   UserIcon,
   CoursesIcon,
@@ -13,16 +15,23 @@ import {
   LogoutIcon,
   ChevronDownIcon,
   AdminIcon,
+  CalendarIcon,
 } from "@/components/icons";
 
 export function UserMenu() {
   const user = useCurrentUser();
+  const [isCoach, setIsCoach] = useState(false);
+
+  useEffect(() => {
+    amICoach().then(setIsCoach);
+  }, []);
 
   const links = [
     { label: "Profile", href: "/profile", icon: UserIcon },
     { label: "My Courses", href: "/my-courses", icon: CoursesIcon },
     { label: "Program Overview", href: "/program-overview", icon: ProgramIcon },
     { label: "Help & Support", href: "/contact-support", icon: SupportIcon },
+    ...(isCoach ? [{ label: "Coach Portal", href: "/coach", icon: CalendarIcon }] : []),
     ...(user.role === "ADMIN"
       ? [{ label: "Admin Panel", href: "/admin", icon: AdminIcon }]
       : []),

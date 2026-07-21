@@ -31,7 +31,7 @@ export function BookACoachView({ coaches }: { coaches: CoachRecord[] }) {
 }
 
 function BookACoachForm({ coaches }: { coaches: CoachRecord[] }) {
-  const [coach, setCoach] = useState(coaches[0].name);
+  const [coachId, setCoachId] = useState(coaches[0].id);
   const [slots, setSlots] = useState<AvailableSlot[] | null>(null);
   const [sessionAt, setSessionAt] = useState<string | null>(null);
   const [confirmedLabel, setConfirmedLabel] = useState<string | null>(null);
@@ -42,11 +42,11 @@ function BookACoachForm({ coaches }: { coaches: CoachRecord[] }) {
   useEffect(() => {
     setSlots(null);
     setSessionAt(null);
-    getAvailableSlotsAction(coach).then(setSlots);
-  }, [coach]);
+    getAvailableSlotsAction(coachId).then(setSlots);
+  }, [coachId]);
 
-  const selectCoach = (name: string) => {
-    setCoach(name);
+  const selectCoach = (id: string) => {
+    setCoachId(id);
     setConfirmedLabel(null);
     setError(null);
   };
@@ -55,11 +55,11 @@ function BookACoachForm({ coaches }: { coaches: CoachRecord[] }) {
     if (!sessionAt) return;
     setError(null);
     startTransition(async () => {
-      const result = await bookCoachSessionAction(coach, sessionAt);
+      const result = await bookCoachSessionAction(coachId, sessionAt);
       if (!result.success) {
         setError(result.error);
         // The slot may have just been taken by someone else — refresh availability.
-        getAvailableSlotsAction(coach).then(setSlots);
+        getAvailableSlotsAction(coachId).then(setSlots);
         setSessionAt(null);
         return;
       }
@@ -69,7 +69,7 @@ function BookACoachForm({ coaches }: { coaches: CoachRecord[] }) {
     });
   };
 
-  const selected = coaches.find((c) => c.name === coach)!;
+  const selected = coaches.find((c) => c.id === coachId)!;
   const selectedSlot = slots?.find((s) => s.sessionAt === sessionAt);
 
   return (
@@ -85,11 +85,11 @@ function BookACoachForm({ coaches }: { coaches: CoachRecord[] }) {
           <h2 className="mb-4 text-lg font-bold text-slate-800">Choose a coach</h2>
           <div className="space-y-3">
             {coaches.map((c) => {
-              const active = c.name === coach;
+              const active = c.id === coachId;
               return (
                 <button
-                  key={c.name}
-                  onClick={() => selectCoach(c.name)}
+                  key={c.id}
+                  onClick={() => selectCoach(c.id)}
                   className={`flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors ${
                     active ? "border-navy-600 bg-navy-50" : "border-line hover:bg-surface-muted"
                   }`}
@@ -122,7 +122,7 @@ function BookACoachForm({ coaches }: { coaches: CoachRecord[] }) {
               </span>
               <h3 className="mt-4 text-lg font-bold text-slate-800">Session booked!</h3>
               <p className="mt-1 text-sm text-muted">
-                You&apos;re booked with <span className="font-semibold text-slate-700">{coach}</span> for{" "}
+                You&apos;re booked with <span className="font-semibold text-slate-700">{selected.name}</span> for{" "}
                 <span className="font-semibold text-slate-700">{confirmedLabel}</span>.{" "}
                 {emailSent
                   ? "A confirmation email is on its way."
@@ -132,7 +132,7 @@ function BookACoachForm({ coaches }: { coaches: CoachRecord[] }) {
                 onClick={() => {
                   setConfirmedLabel(null);
                   setSessionAt(null);
-                  getAvailableSlotsAction(coach).then(setSlots);
+                  getAvailableSlotsAction(coachId).then(setSlots);
                 }}
                 className="mt-5 rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-navy-50"
               >

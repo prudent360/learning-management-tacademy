@@ -68,3 +68,17 @@ export async function requirePermission(key: string): Promise<CurrentUser> {
   }
   return user;
 }
+
+/**
+ * Gate for the coach portal (/coach). Access is purely additive — based on
+ * whether this account has a linked Coach profile, not on Role/Category —
+ * so an Instructor, Admin, or plain Student can also be a coach.
+ */
+export async function requireCoach(): Promise<{ user: CurrentUser; coachId: string }> {
+  const user = await getCurrentUser();
+  const coach = await prisma.coach.findUnique({ where: { userId: user.id }, select: { id: true } });
+  if (!coach) {
+    redirect("/dashboard");
+  }
+  return { user, coachId: coach.id };
+}
