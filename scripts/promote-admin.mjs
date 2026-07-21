@@ -18,8 +18,11 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 try {
-  const user = await prisma.user.update({ where: { email }, data: { role: "ADMIN" } });
-  console.log(`Promoted ${user.email} to ADMIN.`);
+  const user = await prisma.user.update({
+    where: { email },
+    data: { role: "ADMIN", category: "SUPER_ADMIN" },
+  });
+  console.log(`Promoted ${user.email} to ADMIN with SUPER_ADMIN category.`);
 } catch (err) {
   if (err.code === "P2025") {
     console.error(`No user found with email "${email}".`);

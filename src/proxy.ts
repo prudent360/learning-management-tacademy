@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { decrypt } from "@/lib/jwt";
-import { prisma } from "@/lib/prisma";
-import { ADMIN_PATH_PERMISSIONS } from "@/lib/permissions";
-import { getUserPermissionKeys } from "@/lib/permissions-server";
 
 const publicPaths = new Set(["/", "/login", "/register", "/forgot-password", "/reset-password"]);
 // Authenticated visitors land on the dashboard, not the marketing homepage.
@@ -30,25 +27,6 @@ export async function proxy(request: NextRequest) {
 
   if (isAuthed && isPublicOnly) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  // Admin-tier permission gating for GET page loads. Done here (before any
-  // rendering starts) rather than via redirect() inside the page components —
-  // see ADMIN_PATH_PERMISSIONS' comment for why.
-  if (isAuthed && request.method === "GET" && pathname.startsWith("/admin/")) {
-    const match = ADMIN_PATH_PERMISSIONS.find((p) => pathname.startsWith(p.prefix));
-    if (match) {
-      const user = await prisma.user.findUnique({
-        where: { id: session!.userId },
-        select: { role: true },
-      });
-      if (user?.role === "ADMIN") {
-        const keys = await getUserPermissionKeys(session!.userId);
-        if (!keys.has(match.permission)) {
-          return NextResponse.redirect(new URL("/admin", request.url));
-        }
-      }
-    }
   }
 
   return NextResponse.next();
