@@ -12,7 +12,9 @@ type CourseEditorProps = {
   course?: Course;
   currency: string;
   instructors: { id: string; name: string; email: string }[];
+  categories: { id: string; name: string }[];
   canEditInstructorAssignment: boolean;
+  canManageCategories: boolean;
 };
 
 // Lowercases and hyphenates as the user types, without trimming a trailing
@@ -36,7 +38,9 @@ export function CourseEditor({
   course: initialCourse,
   currency,
   instructors,
+  categories,
   canEditInstructorAssignment,
+  canManageCategories,
 }: CourseEditorProps) {
   const router = useRouter();
   const [course, setCourse] = useState<any>(
@@ -44,7 +48,7 @@ export function CourseEditor({
       slug: "",
       title: "",
       subtitle: "",
-      category: "Numerical Reasoning",
+      category: categories[0]?.name ?? "",
       instructor: "",
       cover: "from-navy to-navy-700",
       description: "",
@@ -321,37 +325,32 @@ export function CourseEditor({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Category</label>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="block text-xs font-semibold text-slate-700">Category</label>
+                {canManageCategories && (
+                  <Link
+                    href="/admin/categories"
+                    className="text-[11px] font-semibold text-navy hover:underline"
+                  >
+                    Manage categories
+                  </Link>
+                )}
+              </div>
               <select
-                value={["Numerical Reasoning", "Interview Prep", "Psychometrics"].includes(course.category) ? course.category : "custom"}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === "custom") {
-                    setCourse({ ...course, category: "" });
-                  } else {
-                    setCourse({ ...course, category: val });
-                  }
-                }}
-                className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-navy mb-2"
+                value={course.category}
+                onChange={(e) => setCourse({ ...course, category: e.target.value })}
+                className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-navy"
               >
-                {["Numerical Reasoning", "Interview Prep", "Psychometrics"].map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
+                {categories.length === 0 && <option value="">No categories yet</option>}
+                {!categories.some((cat) => cat.name === course.category) && course.category && (
+                  <option value={course.category}>{course.category}</option>
+                )}
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>
+                    {cat.name}
                   </option>
                 ))}
-                <option value="custom">Custom Category...</option>
               </select>
-              
-              {!["Numerical Reasoning", "Interview Prep", "Psychometrics"].includes(course.category) && (
-                <input
-                  type="text"
-                  value={course.category}
-                  onChange={(e) => setCourse({ ...course, category: e.target.value })}
-                  placeholder="Type custom category name..."
-                  className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-navy"
-                  required
-                />
-              )}
             </div>
           </div>
 

@@ -10,6 +10,7 @@ export type PermissionSection = {
 export const PERMISSION_SECTIONS: PermissionSection[] = [
   { key: "users", label: "Users", actions: ["view", "create", "edit", "delete"] },
   { key: "courses", label: "Courses", actions: ["view", "create", "edit", "delete"] },
+  { key: "categories", label: "Categories", actions: ["view", "create", "edit", "delete"] },
   { key: "enrollments", label: "Enrollments", actions: ["view"] },
   { key: "exams", label: "Exams", actions: ["view", "create", "edit", "delete"] },
   { key: "coaches", label: "Coaches", actions: ["view", "create", "edit", "delete"] },
@@ -73,6 +74,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<AdminRoleKey, string[]> = {
     "users:view",
     "courses:view",
     "courses:edit",
+    "categories:view",
+    "categories:edit",
     "enrollments:view",
     "exams:view",
     "exams:edit",
@@ -89,13 +92,14 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<AdminRoleKey, string[]> = {
   staff: [
     "users:view",
     "courses:view",
+    "categories:view",
     "enrollments:view",
     "exams:view",
     "coaches:view",
     "coach_bookings:view",
     "analytics:view",
   ],
-  instructor: ["courses:view", "courses:edit", "enrollments:view"],
+  instructor: ["courses:view", "courses:edit", "categories:view", "enrollments:view"],
 };
 
 /** Category → AdminRole key, for the 5 admin-tier categories. Student/Affiliate have no admin role. */
@@ -129,6 +133,7 @@ export function categoryToRoleKey(category: Category): AdminRoleKey | null {
 export const ADMIN_PATH_PERMISSIONS: { prefix: string; permission: string }[] = [
   { prefix: "/admin/users", permission: "users:view" },
   { prefix: "/admin/courses", permission: "courses:view" },
+  { prefix: "/admin/categories", permission: "categories:view" },
   { prefix: "/admin/enrollments", permission: "enrollments:view" },
   { prefix: "/admin/exams", permission: "exams:view" },
   { prefix: "/admin/coach-bookings", permission: "coach_bookings:view" },

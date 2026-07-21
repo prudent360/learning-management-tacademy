@@ -114,6 +114,14 @@ model Course {
   goals            Goal[]
 }
 
+/** Canonical list of course category names, managed from /admin/categories. Course.category stores the name as a plain string (not a relation) to match this app's existing free-text pattern, kept in sync on rename. */
+model CourseCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+}
+
 model Module {
   id         String   @id @default(cuid())
   moduleId   String   // e.g. "m1"

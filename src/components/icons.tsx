@@ -559,4 +559,13 @@ export function EyeIcon(p: IconProps) {
   );
 }
 
+export function TagIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M20.6 12.3 12.7 20.2a2 2 0 0 1-2.83 0l-6.07-6.07a2 2 0 0 1 0-2.83L11.7 3.3a2 2 0 0 1 1.42-.6H19a2 2 0 0 1 2 2v5.87a2 2 0 0 1-.4 1.13z" />
+      <circle cx="15.5" cy="7.5" r="1.25" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 
