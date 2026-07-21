@@ -15,6 +15,17 @@ type CourseEditorProps = {
   canEditInstructorAssignment: boolean;
 };
 
+// Lowercases and hyphenates as the user types, without trimming a trailing
+// hyphen mid-edit (that would eat the separator right after a space, before
+// the next word is typed) — leading/trailing hyphens are cleaned up onBlur.
+function slugifyLive(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-");
+}
+
 type ActiveSelection =
   | { type: "course" }
   | { type: "module"; moduleIndex: number }
@@ -303,7 +314,8 @@ export function CourseEditor({
                 type="text"
                 disabled={!isNew}
                 value={course.slug}
-                onChange={(e) => setCourse({ ...course, slug: e.target.value })}
+                onChange={(e) => setCourse({ ...course, slug: slugifyLive(e.target.value) })}
+                onBlur={(e) => setCourse({ ...course, slug: e.target.value.replace(/^-+|-+$/g, "") })}
                 placeholder="e.g. analytical-logic"
                 className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-navy disabled:bg-slate-50 disabled:text-muted"
               />
