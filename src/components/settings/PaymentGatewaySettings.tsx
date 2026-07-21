@@ -127,6 +127,8 @@ function GatewayCard({ initial }: { initial: GatewayView }) {
   const [clearEncryptionKey, setClearEncryptionKey] = useState(false);
   const [hasEncryptionKey, setHasEncryptionKey] = useState(initial.hasEncryptionKey);
 
+  const [businessId, setBusinessId] = useState(initial.businessId);
+
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -154,6 +156,7 @@ function GatewayCard({ initial }: { initial: GatewayView }) {
         clearWebhookSecret,
         encryptionKey: encryptionKey || undefined,
         clearEncryptionKey,
+        businessId,
       });
       if (!result.success) {
         setError(result.error);
@@ -296,21 +299,39 @@ function GatewayCard({ initial }: { initial: GatewayView }) {
       </div>
 
       {isFincra && (
-        <SecretField
-          name="encryptionKey"
-          label="Encryption key"
-          value={encryptionKey}
-          onChange={(v) => {
-            touch();
-            setEncryptionKey(v);
-          }}
-          hasExisting={hasEncryptionKey}
-          clear={clearEncryptionKey}
-          onClearChange={(v) => {
-            touch();
-            setClearEncryptionKey(v);
-          }}
-        />
+        <>
+          <SecretField
+            name="encryptionKey"
+            label="Encryption key"
+            value={encryptionKey}
+            onChange={(v) => {
+              touch();
+              setEncryptionKey(v);
+            }}
+            hasExisting={hasEncryptionKey}
+            clear={clearEncryptionKey}
+            onClearChange={(v) => {
+              touch();
+              setClearEncryptionKey(v);
+            }}
+          />
+          <div>
+            <TextField
+              name="businessId"
+              label="Business ID"
+              value={businessId}
+              onChange={(v) => {
+                touch();
+                setBusinessId(v);
+              }}
+            />
+            <p className="mt-1 text-[10px] text-muted">
+              Find this under Fincra Dashboard → Settings → Business. Required for checking a
+              payment&apos;s status directly — without it, this app can only learn a payment
+              succeeded via the webhook above.
+            </p>
+          </div>
+        </>
       )}
 
       <div>

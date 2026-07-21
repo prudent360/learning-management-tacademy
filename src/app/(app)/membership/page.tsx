@@ -6,13 +6,15 @@ import { MembershipPaymentConfirming } from "@/components/MembershipPaymentConfi
 export default async function MembershipPage({
   searchParams,
 }: {
-  searchParams: Promise<{ payment?: string; reference?: string }>;
+  // Reference presence alone signals we're back from checkout — see
+  // enrollment.ts's initFincraPayment for why the return URL has no query
+  // params of our own (the gateway appends its own "?reference=...").
+  searchParams: Promise<{ reference?: string }>;
 }) {
-  const { payment, reference } = await searchParams;
-  const paymentVal = Array.isArray(payment) ? payment[0] : payment;
+  const { reference } = await searchParams;
   const referenceVal = Array.isArray(reference) ? reference[0] : reference;
 
-  if (paymentVal === "success" && referenceVal) {
+  if (referenceVal) {
     return <MembershipPaymentConfirming reference={referenceVal} />;
   }
 

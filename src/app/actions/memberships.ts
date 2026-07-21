@@ -290,7 +290,10 @@ export async function initMembershipPaymentAction(
           amount: amountInSubunit,
           currency,
           reference,
-          callback_url: `${appUrl}/membership?payment=success&reference=${reference}`,
+          // Bare URL — Fincra/Paystack append their own "?reference=..." on
+          // redirect regardless of existing query params, so adding our own
+          // here would produce a malformed double query string.
+          callback_url: `${appUrl}/membership`,
           metadata: { type: "membership", planId, userId: session.userId },
         }),
       });
@@ -322,7 +325,8 @@ export async function initMembershipPaymentAction(
         customer: { name: user.name, email: user.email },
         reference,
         feeBearer: "customer",
-        redirectUrl: `${appUrl}/membership?payment=success&reference=${reference}`,
+        // Bare URL — see the matching comment in the Paystack branch above.
+        redirectUrl: `${appUrl}/membership`,
         metadata: { type: "membership", planId, userId: session.userId },
       }),
     });
@@ -397,6 +401,7 @@ export async function verifyMembershipAction(reference: string): Promise<VerifyM
             headers: {
               "api-key": sec,
               "x-pub-key": pub,
+              "x-business-id": gateway.businessId,
               Accept: "application/json",
             },
           });

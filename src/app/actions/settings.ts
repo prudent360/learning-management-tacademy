@@ -101,6 +101,7 @@ const GatewaySchema = z.object({
   clearWebhookSecret: z.boolean().optional(),
   encryptionKey: z.string().trim().optional(),
   clearEncryptionKey: z.boolean().optional(),
+  businessId: z.string().trim().optional(),
 });
 export type GatewayInput = z.infer<typeof GatewaySchema>;
 
@@ -115,6 +116,7 @@ export type GatewayView = {
   hasLiveSecretKey: boolean;
   hasWebhookSecret: boolean;
   hasEncryptionKey: boolean;
+  businessId: string;
 };
 
 export async function listPaymentGateways(): Promise<GatewayView[]> {
@@ -133,6 +135,7 @@ export async function listPaymentGateways(): Promise<GatewayView[]> {
     hasLiveSecretKey: row.liveSecretKey.length > 0,
     hasWebhookSecret: row.webhookSecret.length > 0,
     hasEncryptionKey: row.encryptionKey.length > 0,
+    businessId: row.businessId,
   }));
 }
 
@@ -155,6 +158,7 @@ export async function updatePaymentGateway(input: GatewayInput): Promise<ActionR
     clearWebhookSecret,
     encryptionKey,
     clearEncryptionKey,
+    businessId,
   } = parsed.data;
 
   // Public keys/currencies/mode/enabled are never sensitive, so they're always
@@ -175,6 +179,7 @@ export async function updatePaymentGateway(input: GatewayInput): Promise<ActionR
   else if (clearWebhookSecret) data.webhookSecret = "";
   if (encryptionKey) data.encryptionKey = encryptionKey;
   else if (clearEncryptionKey) data.encryptionKey = "";
+  if (businessId !== undefined) data.businessId = businessId;
 
   await prisma.paymentGateway.upsert({
     where: { id },
@@ -190,6 +195,7 @@ export async function updatePaymentGateway(input: GatewayInput): Promise<ActionR
       liveSecretKey: liveSecretKey ?? "",
       webhookSecret: webhookSecret ?? "",
       encryptionKey: encryptionKey ?? "",
+      businessId: businessId ?? "",
     },
   });
   revalidatePath("/admin/settings/payment");

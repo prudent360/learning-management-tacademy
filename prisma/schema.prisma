@@ -192,6 +192,7 @@ model PaymentGateway {
   liveSecretKey String   @default("") // never returned raw to client
   webhookSecret String   @default("") // never returned raw to client; Fincra-only, Paystack verifies with its secret key instead
   encryptionKey String   @default("") // never returned raw to client; Fincra-only, encrypts card details client-side
+  businessId    String   @default("") // Fincra-only, not secret; required by its merchant-reference verify endpoint
   currencies    String   @default("") // comma-separated ISO codes this gateway can charge; empty = accept the order currency unconditionally
   updatedAt     DateTime @updatedAt
 }

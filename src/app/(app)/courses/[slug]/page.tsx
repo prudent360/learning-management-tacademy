@@ -23,7 +23,7 @@ export default async function CoursePage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ payment?: string; reference?: string }>;
+  searchParams: Promise<{ reference?: string }>;
 }) {
   const { slug } = await params;
   const course = await getCourse(slug);
@@ -42,14 +42,17 @@ export default async function CoursePage({
     return <CoursePlayer course={course} />;
   }
 
-  // Just returned from a hosted checkout page — the webhook that actually
-  // records enrollment can lag a few seconds behind this redirect, so hold
-  // on a confirming state instead of bouncing straight back to checkout.
-  const { payment, reference } = await searchParams;
-  const paymentVal = Array.isArray(payment) ? payment[0] : payment;
+  // Just returned from a hosted checkout page — the gateway appends its own
+  // "?reference=..." to the bare return URL we gave it, so that param's mere
+  // presence is what signals we're back from checkout (see enrollment.ts's
+  // initFincraPayment/initPaystackPayment for why we don't add our own
+  // query params here). The webhook that actually records enrollment can lag
+  // a few seconds behind this redirect, so hold on a confirming state
+  // instead of bouncing straight back to checkout.
+  const { reference } = await searchParams;
   const referenceVal = Array.isArray(reference) ? reference[0] : reference;
 
-  if (paymentVal === "success" && referenceVal) {
+  if (referenceVal) {
     return <PaymentConfirming courseSlug={slug} reference={referenceVal} />;
   }
 

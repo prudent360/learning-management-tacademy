@@ -158,7 +158,10 @@ async function initFincraPayment({
     },
     reference,
     feeBearer: "customer",
-    redirectUrl: `${appUrl}/courses/${courseSlug}?payment=success&reference=${reference}`,
+    // Bare URL — Fincra appends its own "?reference=..." on redirect
+    // regardless of whether this URL already has query params, so adding
+    // our own here would produce a malformed double query string.
+    redirectUrl: `${appUrl}/courses/${courseSlug}`,
     metadata: {
       courseSlug,
       userId,
@@ -237,7 +240,8 @@ async function initPaystackPayment({
     amount: amountInSubunit,
     currency,
     reference,
-    callback_url: `${appUrl}/courses/${courseSlug}?payment=success&reference=${reference}`,
+    // Bare URL — see the matching comment in initFincraPayment above.
+    callback_url: `${appUrl}/courses/${courseSlug}`,
     metadata: {
       courseSlug,
       userId,
@@ -366,6 +370,7 @@ export async function verifyAndEnrollAction(
             headers: {
               "api-key": sec,
               "x-pub-key": pub,
+              "x-business-id": gateway.businessId,
               Accept: "application/json",
             },
           });
