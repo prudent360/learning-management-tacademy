@@ -382,6 +382,44 @@ export async function verifyMembershipAction(reference: string): Promise<VerifyM
     }
   }
 
+  if (sub.provider === "fincra") {
+    const gateway = await prisma.paymentGateway.findUnique({ where: { id: "fincra" } });
+    if (gateway) {
+      const apiBase = gateway.mode === "live" ? "https://api.fincra.com" : "https://sandboxapi.fincra.com";
+      const candidates = [
+        { sec: gateway.liveSecretKey, pub: gateway.livePublicKey },
+        { sec: gateway.testSecretKey, pub: gateway.testPublicKey },
+      ].filter((c) => Boolean(c.sec));
+
+      for (const { sec, pub } of candidates) {
+        try {
+          const res = await fetch(`${apiBase}/checkout/payments/merchant-reference/${encodeURIComponent(reference)}`, {
+            headers: {
+              "api-key": sec,
+              "x-pub-key": pub,
+              Accept: "application/json",
+            },
+          });
+          const data = await res.json();
+          const pStatus = data.data?.status || data.status;
+          if (res.ok && (pStatus === "success" || pStatus === "successful")) {
+            await activateMembership(sub.id);
+            return { active: true };
+          }
+          if (res.ok && (pStatus === "failed" || pStatus === "declined" || pStatus === "cancelled" || pStatus === "expired")) {
+            await prisma.membershipSubscription.update({
+              where: { id: sub.id },
+              data: { status: "failed" },
+            });
+            return { active: false, failed: true };
+          }
+        } catch (err) {
+          console.error("Fincra membership verify error:", err);
+        }
+      }
+    }
+  }
+
   return { active: false };
 }
 
