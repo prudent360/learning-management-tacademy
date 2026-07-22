@@ -2,6 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { FilterPills } from "@/components/FilterPills";
+
+const SOURCE_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "All" },
+  { value: "free", label: "Free" },
+  { value: "paid", label: "Paid" },
+  { value: "granted", label: "Granted" },
+];
 
 export function EnrollmentsFilterBar({ courses }: { courses: { slug: string; title: string }[] }) {
   const router = useRouter();
@@ -34,8 +42,11 @@ export function EnrollmentsFilterBar({ courses }: { courses: { slug: string; tit
   }, [q]);
 
   const course = searchParams.get("course") ?? "";
+  const source = searchParams.get("source") ?? "";
   const sort = searchParams.get("sort") ?? "newest";
-  const hasFilters = Boolean(searchParams.get("q") || course || (sort && sort !== "newest"));
+  const hasFilters = Boolean(
+    searchParams.get("q") || course || source || (sort && sort !== "newest"),
+  );
 
   const clearAll = () => {
     setQ("");
@@ -62,6 +73,10 @@ export function EnrollmentsFilterBar({ courses }: { courses: { slug: string; tit
           <option value="newest">Sort by: Newest</option>
           <option value="oldest">Sort by: Oldest</option>
         </select>
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <FilterPills options={SOURCE_OPTIONS} value={source} onChange={(v) => updateParam("source", v)} />
       </div>
 
       <div className="border-t border-line pt-4">

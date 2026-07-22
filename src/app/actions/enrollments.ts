@@ -9,6 +9,7 @@ export type EnrollmentSource = "free" | "paid" | "granted";
 export type ListEnrollmentsFilters = {
   q?: string;
   courseSlug?: string;
+  source?: EnrollmentSource;
   sort?: "newest" | "oldest";
 };
 
@@ -28,7 +29,7 @@ export type EnrollmentRow = {
 export async function listEnrollments(filters: ListEnrollmentsFilters = {}): Promise<EnrollmentRow[]> {
   const admin = await requirePermission("enrollments:view");
 
-  const { q, courseSlug, sort = "newest" } = filters;
+  const { q, courseSlug, source: sourceFilter, sort = "newest" } = filters;
 
   // Instructors only see enrollments in courses assigned to them.
   const scopeToInstructor = admin.category === "INSTRUCTOR" ? admin.id : undefined;
@@ -66,7 +67,7 @@ export async function listEnrollments(filters: ListEnrollmentsFilters = {}): Pro
     successfulPayments.map((p) => [`${p.userId}:${p.courseSlug}`, p.provider])
   );
 
-  return enrollments.map((e) => {
+  const rows = enrollments.map((e) => {
     const paidVia = paymentByKey.get(`${e.userId}:${e.courseSlug}`);
     const source: EnrollmentSource = e.course.price <= 0 ? "free" : paidVia ? "paid" : "granted";
 
@@ -83,6 +84,9 @@ export async function listEnrollments(filters: ListEnrollmentsFilters = {}): Pro
       enrolledAt: e.enrolledAt,
     };
   });
+
+  // "source" is derived, not a DB column, so it's filtered in memory rather than in `where`.
+  return sourceFilter ? rows.filter((r) => r.source === sourceFilter) : rows;
 }
 
 export async function listEnrollableCourses(): Promise<{ slug: string; title: string }[]> {

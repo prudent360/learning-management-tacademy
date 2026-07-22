@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { FilterPills } from "@/components/FilterPills";
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
-  { value: "", label: "All Statuses" },
-  { value: "success", label: "Success" },
+  { value: "", label: "All" },
+  { value: "success", label: "Successful" },
   { value: "pending", label: "Pending" },
   { value: "failed", label: "Failed" },
   { value: "refunded", label: "Refunded" },
@@ -73,31 +74,20 @@ export function PaymentsFilterBar() {
         </select>
       </div>
 
-      <div className="border-t border-line pt-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-          Filter by Status
-        </p>
-        <div className="flex items-center gap-3">
-          <select
-            value={status}
-            onChange={(e) => updateParam("status", e.target.value)}
-            className="w-full max-w-sm rounded-lg border border-line bg-surface px-3 py-2.5 text-sm outline-none focus:border-navy-600"
+      <div className="flex flex-col gap-3 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <FilterPills
+          options={STATUS_OPTIONS}
+          value={status}
+          onChange={(v) => updateParam("status", v)}
+        />
+        {hasFilters && (
+          <button
+            onClick={clearAll}
+            className="shrink-0 self-start rounded-lg border border-line bg-surface-muted px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 sm:self-auto"
           >
-            {STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-          {hasFilters && (
-            <button
-              onClick={clearAll}
-              className="shrink-0 rounded-lg border border-line bg-surface-muted px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
-            >
-              Clear All
-            </button>
-          )}
-        </div>
+            Clear All
+          </button>
+        )}
       </div>
     </div>
   );

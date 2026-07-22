@@ -8,9 +8,9 @@ import { PaymentsExportButton } from "@/components/PaymentsExportButton";
 import { MarkRefundedButton } from "@/components/MarkRefundedButton";
 import { PendingPaymentActions } from "@/components/PendingPaymentActions";
 import { EditPaymentModal } from "@/components/EditPaymentModal";
+import { StatCard } from "@/components/StatCard";
 import { formatCurrency } from "@/lib/currency";
 import { CheckCircleIcon, ClockIcon, CloseIcon, ArrowLeftIcon } from "@/components/icons";
-import type { ComponentType, SVGProps } from "react";
 
 const SORTS: ListPaymentsFilters["sort"][] = ["newest", "oldest", "amount"];
 const STATUSES: PaymentStatus[] = ["pending", "success", "failed", "refunded"];
@@ -64,27 +64,89 @@ export default async function AdminPaymentsPage({
 
       <PaymentsFilterBar />
 
-      <div className="rounded-2xl border border-line bg-surface p-6">
-        <div className="space-y-2">
-          {payments.map((p) => (
-            <div
-              key={p.id}
-              className="flex flex-col gap-3 rounded-xl bg-surface-muted p-4 sm:flex-row sm:items-center sm:gap-4"
-            >
-              <Avatar name={p.userName} accent="navy" size={40} />
+      <div className="rounded-2xl border border-line bg-surface">
+        {/* Table — sm and up */}
+        <div className="hidden overflow-x-auto sm:block">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-line text-xs font-semibold uppercase tracking-wide text-muted">
+                <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Reference</th>
+                <th className="px-4 py-3">User</th>
+                <th className="px-4 py-3">Course</th>
+                <th className="px-4 py-3">Amount</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Gateway</th>
+                <th className="px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {payments.map((p) => (
+                <tr key={p.id} className="border-b border-line last:border-0 hover:bg-surface-muted/60">
+                  <td className="whitespace-nowrap px-4 py-3 text-xs text-muted">
+                    {new Date(p.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 font-mono text-[11px] text-slate-500">
+                    {p.providerRef}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <Avatar name={p.userName} accent="navy" size={32} />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-slate-800">{p.userName}</p>
+                        <p className="truncate text-xs text-muted">{p.userEmail}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="max-w-[200px] truncate px-4 py-3 text-xs text-muted">{p.courseTitle}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm font-extrabold text-slate-800">
+                    {formatCurrency(p.amount, p.currency)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    <PaymentStatusBadge status={p.status} />
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-xs capitalize text-muted">{p.provider}</td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      {p.status === "pending" && <PendingPaymentActions paymentId={p.id} />}
+                      {p.status === "success" && <MarkRefundedButton paymentId={p.id} />}
+                      <EditPaymentModal
+                        paymentId={p.id}
+                        amount={p.amount}
+                        currency={p.currency}
+                        providerRef={p.providerRef}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-bold text-slate-800">{p.userName}</p>
-                  <PaymentStatusBadge status={p.status} />
+          {payments.length === 0 && (
+            <p className="py-8 text-center text-sm text-muted">No transactions match these filters.</p>
+          )}
+        </div>
+
+        {/* Cards — below sm, a table can't fit this many columns on a phone screen */}
+        <div className="space-y-2 p-4 sm:hidden">
+          {payments.map((p) => (
+            <div key={p.id} className="flex flex-col gap-3 rounded-xl bg-surface-muted p-4">
+              <div className="flex items-start gap-3">
+                <Avatar name={p.userName} accent="navy" size={40} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-bold text-slate-800">{p.userName}</p>
+                    <PaymentStatusBadge status={p.status} />
+                  </div>
+                  <p className="truncate text-xs text-muted">
+                    {p.userEmail} · {p.courseTitle}
+                  </p>
+                  <p className="truncate font-mono text-[11px] text-slate-400">{p.providerRef}</p>
                 </div>
-                <p className="truncate text-xs text-muted">
-                  {p.userEmail} · {p.courseTitle}
-                </p>
-                <p className="truncate font-mono text-[11px] text-slate-400">{p.providerRef}</p>
               </div>
 
-              <div className="flex shrink-0 flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
                 <span className="text-sm font-extrabold text-slate-800">
                   {formatCurrency(p.amount, p.currency)}
                 </span>
@@ -92,7 +154,7 @@ export default async function AdminPaymentsPage({
                 <span>{new Date(p.createdAt).toLocaleDateString()}</span>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {p.status === "pending" && <PendingPaymentActions paymentId={p.id} />}
                 {p.status === "success" && <MarkRefundedButton paymentId={p.id} />}
                 <EditPaymentModal
@@ -108,42 +170,6 @@ export default async function AdminPaymentsPage({
           {payments.length === 0 && (
             <p className="py-8 text-center text-sm text-muted">No transactions match these filters.</p>
           )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  accent,
-}: {
-  icon: ComponentType<SVGProps<SVGSVGElement>>;
-  label: string;
-  value: number | string;
-  accent: "green" | "amber" | "red" | "slate";
-}) {
-  const accentClasses = {
-    green: "bg-green-100 text-brand-green",
-    amber: "bg-amber-50 text-amber-600",
-    red: "bg-red-50 text-red-600",
-    slate: "bg-slate-100 text-slate-600",
-  } as const;
-
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-line bg-surface p-5">
-      <Icon
-        className={`pointer-events-none absolute -right-3 -top-3 h-24 w-24 opacity-[0.06] ${accentClasses[accent].split(" ")[1]}`}
-      />
-      <div className="relative flex items-center gap-3">
-        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${accentClasses[accent]}`}>
-          <Icon className="h-5 w-5" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-2xl font-extrabold text-slate-800">{value}</p>
-          <p className="truncate text-xs font-medium text-muted">{label}</p>
         </div>
       </div>
     </div>
