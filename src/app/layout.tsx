@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import { getPublicBrandingSettings } from "@/app/actions/settings";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -7,10 +8,18 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "TekSkillUp — e-Learning Centre",
-  description: "TekSkillUp learning management dashboard",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const branding = await getPublicBrandingSettings();
+  return {
+    title: "TekSkillUp — e-Learning Centre",
+    description: "TekSkillUp learning management dashboard",
+    // favicon.ico lives in public/ (not app/, Next's auto-detected special
+    // file) specifically so there's always exactly one <link rel="icon">
+    // tag — a custom upload plus the file-convention default rendered both
+    // at once left it up to each browser's own tie-breaking to pick one.
+    icons: { icon: branding.faviconLogo || "/favicon.ico" },
+  };
+}
 
 export default function RootLayout({
   children,

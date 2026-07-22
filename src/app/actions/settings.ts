@@ -429,13 +429,14 @@ export async function deleteEmailTemplateAction(key: string): Promise<ActionResu
 
 // ---------- Branding ----------
 
-export type BrandingSlot = "header" | "footer" | "dashboard" | "invoice";
+export type BrandingSlot = "header" | "footer" | "dashboard" | "invoice" | "favicon";
 
 export type BrandingSettingsView = {
   headerLogo: string | null;
   footerLogo: string | null;
   dashboardLogo: string | null;
   invoiceLogo: string | null;
+  faviconLogo: string | null;
 };
 
 type BrandingField = keyof BrandingSettingsView;
@@ -450,6 +451,8 @@ function brandingField(slot: BrandingSlot): BrandingField {
       return "dashboardLogo";
     case "invoice":
       return "invoiceLogo";
+    case "favicon":
+      return "faviconLogo";
   }
 }
 
@@ -475,6 +478,7 @@ export async function getBrandingSettings(): Promise<BrandingSettingsView> {
     footerLogo: row.footerLogo,
     dashboardLogo: row.dashboardLogo,
     invoiceLogo: row.invoiceLogo,
+    faviconLogo: row.faviconLogo,
   };
 }
 
@@ -486,6 +490,7 @@ export async function getPublicBrandingSettings(): Promise<BrandingSettingsView>
     footerLogo: row?.footerLogo ?? null,
     dashboardLogo: row?.dashboardLogo ?? null,
     invoiceLogo: row?.invoiceLogo ?? null,
+    faviconLogo: row?.faviconLogo ?? null,
   };
 }
 

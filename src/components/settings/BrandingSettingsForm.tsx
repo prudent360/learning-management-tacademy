@@ -19,6 +19,7 @@ const SLOTS: {
   { slot: "footer", field: "footerLogo", title: "Footer Logo", hint: "Shown in the site footer" },
   { slot: "dashboard", field: "dashboardLogo", title: "Dashboard Logo", hint: "Shown inside the admin sidebar" },
   { slot: "invoice", field: "invoiceLogo", title: "Invoice Logo", hint: "Used on receipts and invoices" },
+  { slot: "favicon", field: "faviconLogo", title: "Favicon", hint: "Browser tab icon — square, e.g. 512×512" },
 ];
 
 export function BrandingSettingsForm({ initial }: { initial: BrandingSettingsView }) {

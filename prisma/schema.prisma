@@ -242,6 +242,7 @@ model BrandingSettings {
   footerLogo    String?
   dashboardLogo String?
   invoiceLogo   String?
+  faviconLogo   String?
   updatedAt     DateTime @updatedAt
 }
 
