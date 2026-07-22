@@ -8,6 +8,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, getOptionalSession } from "@/lib/dal";
 import { sendTemplatedEmail } from "@/lib/email";
+import { getAppUrl } from "@/lib/app-url";
 import { revalidatePath } from "next/cache";
 import { GATEWAY_IDS, GATEWAY_LABELS, type GatewayId } from "@/lib/payment-gateways";
 import { SUPPORTED_CURRENCIES, CURRENCY_LABELS } from "@/lib/currency";
@@ -567,18 +568,23 @@ export async function removeBrandingLogoAction(slot: BrandingSlot): Promise<Acti
   return { success: true };
 }
 
-const SAMPLE_DATA: Record<string, string> = {
-  "{{user_name}}": "John Doe",
-  "{{user_email}}": "john.doe@example.com",
-  "{{course_title}}": "Full-Stack Web Development",
-  "{{site_name}}": "TekSkillUp",
-  "{{support_email}}": "support@tekskillup.com",
-  "{{login_url}}": "https://tekskillup.com/login",
-};
+async function getSampleTemplateData(): Promise<Record<string, string>> {
+  const appUrl = await getAppUrl();
+  return {
+    "{{user_name}}": "John Doe",
+    "{{user_email}}": "john.doe@example.com",
+    "{{course_title}}": "Full-Stack Web Development",
+    "{{site_name}}": "TekSkillUp",
+    "{{support_email}}": "support@tekskillup.com",
+    // Real app domain, not the marketing site — "Send Test"/preview buttons
+    // must point where a real login page actually lives.
+    "{{login_url}}": `${appUrl}/login`,
+  };
+}
 
 export async function sendTestEmailAction(key: string, toEmail: string): Promise<ActionResult> {
   await requireAdmin();
-  const result = await sendTemplatedEmail(key, toEmail, SAMPLE_DATA);
+  const result = await sendTemplatedEmail(key, toEmail, await getSampleTemplateData());
   if (!result.success) {
     return {
       success: false,

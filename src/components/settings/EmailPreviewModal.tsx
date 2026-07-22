@@ -17,7 +17,10 @@ const SAMPLE_DATA: Record<string, string> = {
   "{{course_title}}": "Full-Stack Web Development",
   "{{site_name}}": "TekSkillUp",
   "{{support_email}}": "support@tekskillup.com",
-  "{{login_url}}": "https://tekskillup.com/login",
+  // Relative on purpose: this only feeds the read-only preview pane below
+  // (link clicks are disabled there via pointer-events-none), so it doesn't
+  // need — and shouldn't guess at — a fully-qualified domain.
+  "{{login_url}}": "/login",
 };
 
 function interpolate(text: string): string {
