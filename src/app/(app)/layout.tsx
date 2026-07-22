@@ -15,9 +15,9 @@ export default async function AppLayout({
   return (
     <UserProvider user={user}>
       <div className="flex min-h-screen bg-background">
-        <Sidebar logoUrl={branding.dashboardLogo} />
+        <Sidebar logoUrl={branding.dashboardLogo} siteName={branding.siteName} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar logoUrl={branding.dashboardLogo} />
+          <TopBar logoUrl={branding.dashboardLogo} siteName={branding.siteName} />
           <main className="min-w-0 flex-1 p-4 md:p-6 lg:p-8">
           <div className="mx-auto w-full max-w-6xl">{children}</div>
         </main>

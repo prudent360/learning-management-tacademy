@@ -5,14 +5,20 @@ import { useActionState } from "react";
 import { Logo } from "@/components/Logo";
 import { forgotPassword } from "@/app/actions/auth";
 
-export function ForgotPasswordForm({ logoUrl }: { logoUrl?: string | null }) {
+export function ForgotPasswordForm({
+  logoUrl,
+  siteName,
+}: {
+  logoUrl?: string | null;
+  siteName?: string | null;
+}) {
   const [state, action, pending] = useActionState(forgotPassword, undefined);
 
   return (
     <div className="grid min-h-screen place-items-center bg-background p-4">
       <div className="w-full max-w-sm rounded-2xl bg-surface p-8 shadow-sm">
         <div className="flex justify-center">
-          <Logo src={logoUrl} />
+          <Logo src={logoUrl} siteName={siteName} />
         </div>
         <h1 className="mt-6 text-center text-lg font-bold text-slate-800">
           Reset password

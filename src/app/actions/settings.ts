@@ -53,6 +53,7 @@ export async function updateGeneralSettings(input: GeneralSettingsInput): Promis
     create: { id: 1, ...parsed.data },
   });
   revalidatePath("/admin/settings/general");
+  revalidatePath("/", "layout");
   return { success: true };
 }
 
@@ -432,6 +433,7 @@ export async function deleteEmailTemplateAction(key: string): Promise<ActionResu
 export type BrandingSlot = "header" | "footer" | "dashboard" | "invoice" | "favicon";
 
 export type BrandingSettingsView = {
+  siteName: string;
   headerLogo: string | null;
   footerLogo: string | null;
   dashboardLogo: string | null;
@@ -439,7 +441,7 @@ export type BrandingSettingsView = {
   faviconLogo: string | null;
 };
 
-type BrandingField = keyof BrandingSettingsView;
+type BrandingField = "headerLogo" | "footerLogo" | "dashboardLogo" | "invoiceLogo" | "faviconLogo";
 
 function brandingField(slot: BrandingSlot): BrandingField {
   switch (slot) {
@@ -468,12 +470,16 @@ const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "branding");
 
 export async function getBrandingSettings(): Promise<BrandingSettingsView> {
   await requireAdmin();
-  const row = await prisma.brandingSettings.upsert({
-    where: { id: 1 },
-    update: {},
-    create: { id: 1 },
-  });
+  const [row, general] = await Promise.all([
+    prisma.brandingSettings.upsert({
+      where: { id: 1 },
+      update: {},
+      create: { id: 1 },
+    }),
+    prisma.generalSettings.findUnique({ where: { id: 1 } }),
+  ]);
   return {
+    siteName: general?.siteName ?? "TekSkillUp",
     headerLogo: row.headerLogo,
     footerLogo: row.footerLogo,
     dashboardLogo: row.dashboardLogo,
@@ -484,8 +490,12 @@ export async function getBrandingSettings(): Promise<BrandingSettingsView> {
 
 /** Unauthenticated read for rendering the logo on public/student-facing pages — these are public brand assets, not sensitive data. */
 export async function getPublicBrandingSettings(): Promise<BrandingSettingsView> {
-  const row = await prisma.brandingSettings.findUnique({ where: { id: 1 } });
+  const [row, general] = await Promise.all([
+    prisma.brandingSettings.findUnique({ where: { id: 1 } }),
+    prisma.generalSettings.findUnique({ where: { id: 1 } }),
+  ]);
   return {
+    siteName: general?.siteName ?? "TekSkillUp",
     headerLogo: row?.headerLogo ?? null,
     footerLogo: row?.footerLogo ?? null,
     dashboardLogo: row?.dashboardLogo ?? null,

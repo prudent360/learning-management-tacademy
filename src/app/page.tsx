@@ -22,11 +22,15 @@ import {
   ClipboardIcon,
 } from "@/components/icons";
 
-export const metadata: Metadata = {
-  title: "TekSkillUp — Ace Your Aptitude Tests, Interviews & Career Assessments",
-  description:
-    "Practice exams, interview coaching, personality profiling, and 1:1 coach sessions — everything you need to pass career assessments with confidence.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const branding = await getPublicBrandingSettings();
+  const siteName = branding.siteName || "TekSkillUp";
+  return {
+    title: `${siteName} — Ace Your Aptitude Tests, Interviews & Career Assessments`,
+    description:
+      "Practice exams, interview coaching, personality profiling, and 1:1 coach sessions — everything you need to pass career assessments with confidence.",
+  };
+}
 
 const features = [
   {
@@ -110,7 +114,7 @@ export default async function HomePage() {
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-line bg-surface/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-4 md:px-6">
-          <Logo src={branding.headerLogo} />
+          <Logo src={branding.headerLogo} siteName={branding.siteName} />
           <nav className="ml-8 hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
             <a href="#features" className="hover:text-navy">
               Features
@@ -327,7 +331,7 @@ export default async function HomePage() {
       {/* Footer */}
       <footer className="border-t border-line py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 text-center md:flex-row md:justify-between md:px-6 md:text-left">
-          <Logo src={branding.footerLogo} />
+          <Logo src={branding.footerLogo} siteName={branding.siteName} />
           <div className="flex items-center gap-6 text-sm font-medium text-muted">
             <Link href="/login" className="hover:text-navy">
               Log in
@@ -339,7 +343,7 @@ export default async function HomePage() {
               Verify Certificate
             </Link>
           </div>
-          <p className="text-xs text-muted">© {new Date().getFullYear()} TekSkillUp. All rights reserved.</p>
+          <p className="text-xs text-muted">© {new Date().getFullYear()} {branding.siteName || "TekSkillUp"}. All rights reserved.</p>
         </div>
       </footer>
     </div>

@@ -27,10 +27,14 @@ import {
 
 // Draft marketing site for tekskillup.com — not yet linked anywhere, kept
 // out of search results until it's ready to replace/redirect from "/".
-export const metadata: Metadata = {
-  title: "TekSkillUp — Landing Page Draft",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const branding = await getPublicBrandingSettings();
+  const siteName = branding.siteName || "TekSkillUp";
+  return {
+    title: `${siteName} — Landing Page Draft`,
+    robots: { index: false, follow: false },
+  };
+}
 
 // Broader than "pass your interview" — this is a full academy, not a
 // single-purpose test-prep tool. See project memory: academy-positioning.
@@ -103,7 +107,7 @@ export default async function LandingPagePage() {
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-line bg-surface/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-4 md:px-6">
-          <Logo src={branding.headerLogo} />
+          <Logo src={branding.headerLogo} siteName={branding.siteName} />
           <nav className="ml-8 hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
             <a href="#programs" className="hover:text-navy">
               Programs
@@ -434,7 +438,7 @@ export default async function LandingPagePage() {
         <div className="mx-auto max-w-6xl px-4 md:px-6">
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
             <div className="col-span-2 sm:col-span-1">
-              <Logo src={branding.footerLogo} />
+              <Logo src={branding.footerLogo} siteName={branding.siteName} />
               <p className="mt-3 text-xs text-muted">
                 The academy for career-ready skills — courses, coaching, and certificates in one place.
               </p>
@@ -476,7 +480,7 @@ export default async function LandingPagePage() {
             </div>
           </div>
           <p className="mt-10 border-t border-line pt-6 text-xs text-muted">
-            © {new Date().getFullYear()} TekSkillUp. All rights reserved.
+            © {new Date().getFullYear()} {branding.siteName || "TekSkillUp"}. All rights reserved.
           </p>
         </div>
       </footer>

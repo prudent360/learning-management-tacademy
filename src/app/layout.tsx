@@ -10,9 +10,13 @@ const geistSans = Geist({
 
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await getPublicBrandingSettings();
+  const siteName = branding.siteName || "TekSkillUp";
   return {
-    title: "TekSkillUp — e-Learning Centre",
-    description: "TekSkillUp learning management dashboard",
+    title: {
+      template: `%s | ${siteName}`,
+      default: `${siteName} — e-Learning Centre`,
+    },
+    description: `${siteName} learning management dashboard`,
     // favicon.ico lives in public/ (not app/, Next's auto-detected special
     // file) specifically so there's always exactly one <link rel="icon">
     // tag — a custom upload plus the file-convention default rendered both

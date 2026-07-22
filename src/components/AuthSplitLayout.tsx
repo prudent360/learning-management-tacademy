@@ -11,13 +11,16 @@ export function AuthSplitLayout({
   heading,
   subheading,
   logoUrl,
+  siteName,
   children,
 }: {
   heading: string;
   subheading: string;
   logoUrl?: string | null;
+  siteName?: string | null;
   children: React.ReactNode;
 }) {
+  const name = siteName || "TekSkillUp";
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden overflow-hidden bg-navy lg:flex lg:flex-col lg:justify-between lg:p-12">
@@ -25,7 +28,7 @@ export function AuthSplitLayout({
         <div className="pointer-events-none absolute -bottom-24 -right-16 h-80 w-80 rounded-full bg-navy-600/50 blur-3xl" />
 
         <div className="relative z-10">
-          <Logo src={logoUrl} variant="onDark" />
+          <Logo src={logoUrl} siteName={siteName} variant="onDark" />
         </div>
 
         <div className="relative z-10 max-w-md">
@@ -42,7 +45,7 @@ export function AuthSplitLayout({
         </div>
 
         <p className="relative z-10 text-xs text-white/40">
-          &copy; {new Date().getFullYear()} TekSkillUp. All rights reserved.
+          &copy; {new Date().getFullYear()} {name}. All rights reserved.
         </p>
       </div>
 

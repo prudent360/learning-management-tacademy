@@ -6,5 +6,5 @@ export const dynamic = "force-dynamic";
 
 export default async function RegisterPage() {
   const branding = await getPublicBrandingSettings();
-  return <RegisterForm logoUrl={branding.headerLogo} />;
+  return <RegisterForm logoUrl={branding.headerLogo} siteName={branding.siteName} />;
 }

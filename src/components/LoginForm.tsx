@@ -5,7 +5,7 @@ import { useActionState } from "react";
 import { login } from "@/app/actions/auth";
 import { AuthSplitLayout } from "@/components/AuthSplitLayout";
 
-export function LoginForm({ logoUrl }: { logoUrl?: string | null }) {
+export function LoginForm({ logoUrl, siteName }: { logoUrl?: string | null; siteName?: string | null }) {
   const [state, action, pending] = useActionState(login, undefined);
 
   return (
@@ -13,6 +13,7 @@ export function LoginForm({ logoUrl }: { logoUrl?: string | null }) {
       heading="Welcome back. Let's keep the momentum going."
       subheading="Pick up right where you left off — your progress, exams, and coaching sessions are all here."
       logoUrl={logoUrl}
+      siteName={siteName}
     >
       <div className="w-full max-w-sm rounded-2xl bg-surface p-8 shadow-sm">
         <h1 className="text-lg font-bold text-slate-800">Welcome back</h1>

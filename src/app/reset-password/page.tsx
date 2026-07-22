@@ -6,5 +6,5 @@ export const dynamic = "force-dynamic";
 
 export default async function ResetPasswordPage() {
   const branding = await getPublicBrandingSettings();
-  return <ResetPasswordForm logoUrl={branding.headerLogo} />;
+  return <ResetPasswordForm logoUrl={branding.headerLogo} siteName={branding.siteName} />;
 }

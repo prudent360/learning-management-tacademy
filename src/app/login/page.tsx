@@ -8,5 +8,5 @@ export const dynamic = "force-dynamic";
 
 export default async function LoginPage() {
   const branding = await getPublicBrandingSettings();
-  return <LoginForm logoUrl={branding.headerLogo} />;
+  return <LoginForm logoUrl={branding.headerLogo} siteName={branding.siteName} />;
 }

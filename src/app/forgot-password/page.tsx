@@ -6,5 +6,5 @@ export const dynamic = "force-dynamic";
 
 export default async function ForgotPasswordPage() {
   const branding = await getPublicBrandingSettings();
-  return <ForgotPasswordForm logoUrl={branding.headerLogo} />;
+  return <ForgotPasswordForm logoUrl={branding.headerLogo} siteName={branding.siteName} />;
 }

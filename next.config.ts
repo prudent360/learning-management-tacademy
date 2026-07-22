@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   // Traces only the files each route actually needs into .next/standalone,
   // so the production Docker image doesn't need to ship node_modules.
   output: "standalone",
+  experimental: {
+    cpus: 1,
+  },
 
   // Static, unconditional redirect — kept out of the page component itself
   // because calling redirect() during render under a Suspense boundary

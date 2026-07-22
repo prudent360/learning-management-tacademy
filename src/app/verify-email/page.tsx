@@ -10,5 +10,5 @@ export default async function VerifyEmailPage({
   searchParams: Promise<{ email?: string }>;
 }) {
   const [{ email }, branding] = await Promise.all([searchParams, getPublicBrandingSettings()]);
-  return <VerifyEmailForm email={email ?? ""} logoUrl={branding.headerLogo} />;
+  return <VerifyEmailForm email={email ?? ""} logoUrl={branding.headerLogo} siteName={branding.siteName} />;
 }

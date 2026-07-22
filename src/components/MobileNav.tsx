@@ -5,7 +5,7 @@ import { Logo } from "@/components/Logo";
 import { NavLinks } from "@/components/NavLinks";
 import { MenuIcon, CloseIcon } from "@/components/icons";
 
-export function MobileNav({ logoUrl }: { logoUrl?: string | null }) {
+export function MobileNav({ logoUrl, siteName }: { logoUrl?: string | null; siteName?: string | null }) {
   const [open, setOpen] = useState(false);
 
   // Lock body scroll and allow Escape to close while the drawer is open.
@@ -45,7 +45,7 @@ export function MobileNav({ logoUrl }: { logoUrl?: string | null }) {
         }`}
       >
         <div className="flex items-center justify-between px-6 py-5">
-          <Logo src={logoUrl} />
+          <Logo src={logoUrl} siteName={siteName} />
           <button
             onClick={() => setOpen(false)}
             aria-label="Close menu"

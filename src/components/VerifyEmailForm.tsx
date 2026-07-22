@@ -8,7 +8,15 @@ import type { VerifyEmailFormState } from "@/lib/definitions";
 
 const RESEND_COOLDOWN_SECONDS = 30;
 
-export function VerifyEmailForm({ email, logoUrl }: { email: string; logoUrl?: string | null }) {
+export function VerifyEmailForm({
+  email,
+  logoUrl,
+  siteName,
+}: {
+  email: string;
+  logoUrl?: string | null;
+  siteName?: string | null;
+}) {
   const [state, action, pending] = useActionState<VerifyEmailFormState, FormData>(
     verifyEmailAction,
     undefined,
@@ -29,8 +37,8 @@ export function VerifyEmailForm({ email, logoUrl }: { email: string; logoUrl?: s
     const result = await resendVerificationCodeAction(email);
     setResending(false);
     if (result.success) {
-      setResendMessage("A new code is on its way.");
       setCooldown(RESEND_COOLDOWN_SECONDS);
+      setResendMessage("A new 6-digit code has been sent to your email.");
     } else {
       setResendMessage(result.error);
     }
@@ -40,7 +48,7 @@ export function VerifyEmailForm({ email, logoUrl }: { email: string; logoUrl?: s
     <div className="grid min-h-screen place-items-center bg-background p-4">
       <div className="w-full max-w-sm rounded-2xl bg-surface p-8 shadow-sm">
         <div className="flex justify-center">
-          <Logo src={logoUrl} />
+          <Logo src={logoUrl} siteName={siteName} />
         </div>
         <h1 className="mt-6 text-center text-lg font-bold text-slate-800">Verify your email</h1>
         <p className="mt-1 text-center text-sm text-muted">

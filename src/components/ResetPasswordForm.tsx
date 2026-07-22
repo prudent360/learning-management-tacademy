@@ -69,12 +69,18 @@ function ResetPasswordFields() {
   );
 }
 
-export function ResetPasswordForm({ logoUrl }: { logoUrl?: string | null }) {
+export function ResetPasswordForm({
+  logoUrl,
+  siteName,
+}: {
+  logoUrl?: string | null;
+  siteName?: string | null;
+}) {
   return (
     <div className="grid min-h-screen place-items-center bg-background p-4">
       <div className="w-full max-w-sm rounded-2xl bg-surface p-8 shadow-sm">
         <div className="flex justify-center">
-          <Logo src={logoUrl} />
+          <Logo src={logoUrl} siteName={siteName} />
         </div>
         <h1 className="mt-6 text-center text-lg font-bold text-slate-800">
           Set new password

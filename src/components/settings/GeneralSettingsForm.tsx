@@ -47,16 +47,20 @@ export function GeneralSettingsForm({ initial }: { initial: GeneralSettingsInput
           <div className="space-y-3">
             <div>
               <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                Company Name
+                Site Name / Company Name
               </label>
               <div className="relative rounded-lg border border-line bg-surface-muted flex items-center focus-within:border-navy-600 focus-within:bg-surface transition-colors">
                 <BuildingIcon className="h-4.5 w-4.5 text-slate-400 ml-3 shrink-0" />
                 <input
                   value={form.siteName}
                   onChange={(e) => set("siteName", e.target.value)}
+                  placeholder="e.g. TekSkillUp"
                   className="w-full bg-transparent px-3 py-2.5 text-sm outline-none"
                 />
               </div>
+              <p className="mt-1 text-[11px] text-muted">
+                Controls the site name shown in browser title bars, headers, footers, logos, and system emails.
+              </p>
             </div>
 
             <div>
