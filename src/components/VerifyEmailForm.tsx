@@ -8,7 +8,7 @@ import type { VerifyEmailFormState } from "@/lib/definitions";
 
 const RESEND_COOLDOWN_SECONDS = 30;
 
-export function VerifyEmailForm({ email }: { email: string }) {
+export function VerifyEmailForm({ email, logoUrl }: { email: string; logoUrl?: string | null }) {
   const [state, action, pending] = useActionState<VerifyEmailFormState, FormData>(
     verifyEmailAction,
     undefined,
@@ -40,7 +40,7 @@ export function VerifyEmailForm({ email }: { email: string }) {
     <div className="grid min-h-screen place-items-center bg-background p-4">
       <div className="w-full max-w-sm rounded-2xl bg-surface p-8 shadow-sm">
         <div className="flex justify-center">
-          <Logo />
+          <Logo src={logoUrl} />
         </div>
         <h1 className="mt-6 text-center text-lg font-bold text-slate-800">Verify your email</h1>
         <p className="mt-1 text-center text-sm text-muted">

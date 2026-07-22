@@ -1,7 +1,21 @@
-export function Logo() {
+export function Logo({
+  src,
+  variant = "default",
+}: {
+  src?: string | null;
+  /** "onDark" flips the fallback text-mark to white for use on the navy auth-split panel. */
+  variant?: "default" | "onDark";
+}) {
+  if (src) {
+    // eslint-disable-next-line @next/next/no-img-element -- admin-uploaded, arbitrary aspect ratio, local /uploads path
+    return <img src={src} alt="TekSkillUp" className="h-8 w-auto max-w-[9rem] object-contain" />;
+  }
+
+  const wordColor = variant === "onDark" ? "text-white" : "text-navy";
+
   return (
     <div className="flex items-center gap-1.5 select-none">
-      <span className="text-xl font-extrabold tracking-tight text-navy">TEK</span>
+      <span className={`text-xl font-extrabold tracking-tight ${wordColor}`}>TEK</span>
       <span
         aria-hidden
         className="grid h-6 w-6 place-items-center rounded-full bg-orange"
@@ -11,7 +25,7 @@ export function Logo() {
         </svg>
       </span>
       <span className="text-xl font-extrabold tracking-tight text-orange">SKILL</span>
-      <span className="text-xl font-extrabold tracking-tight text-navy">UP</span>
+      <span className={`text-xl font-extrabold tracking-tight ${wordColor}`}>UP</span>
     </div>
   );
 }

@@ -80,5 +80,10 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // "uploads" is excluded alongside Next's own static paths: admin-uploaded
+  // assets (e.g. branding logos) live under /uploads and must be fetchable
+  // by logged-out visitors on public pages — an <img> request routed through
+  // this proxy would otherwise get redirected to /login like any other
+  // unauthenticated request to a non-public path.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|uploads).*)"],
 };

@@ -5,6 +5,7 @@ import { lessonCount } from "@/lib/courses";
 import { prisma } from "@/lib/prisma";
 import { listCoaches } from "@/app/actions/coaches";
 import { listActiveMembershipPlans } from "@/app/actions/memberships";
+import { getPublicBrandingSettings } from "@/app/actions/settings";
 import { formatCurrency } from "@/lib/currency";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -68,11 +69,12 @@ const pillars = [
 ];
 
 export default async function LandingPagePage() {
-  const [courses, paymentSettings, coaches, plans] = await Promise.all([
+  const [courses, paymentSettings, coaches, plans, branding] = await Promise.all([
     getCourses(),
     prisma.paymentSettings.findUnique({ where: { id: 1 } }),
     listCoaches(),
     listActiveMembershipPlans(),
+    getPublicBrandingSettings(),
   ]);
 
   const currency = paymentSettings?.currency || "NGN";
@@ -101,7 +103,7 @@ export default async function LandingPagePage() {
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-line bg-surface/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-4 md:px-6">
-          <Logo />
+          <Logo src={branding.headerLogo} />
           <nav className="ml-8 hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
             <a href="#programs" className="hover:text-navy">
               Programs
@@ -432,7 +434,7 @@ export default async function LandingPagePage() {
         <div className="mx-auto max-w-6xl px-4 md:px-6">
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
             <div className="col-span-2 sm:col-span-1">
-              <Logo />
+              <Logo src={branding.footerLogo} />
               <p className="mt-3 text-xs text-muted">
                 The academy for career-ready skills — courses, coaching, and certificates in one place.
               </p>

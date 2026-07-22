@@ -1,4 +1,5 @@
-import { CheckCircleIcon, GraduationIcon } from "@/components/icons";
+import { Logo } from "@/components/Logo";
+import { CheckCircleIcon } from "@/components/icons";
 
 const FEATURES = [
   "Structured, exam-focused courses",
@@ -9,10 +10,12 @@ const FEATURES = [
 export function AuthSplitLayout({
   heading,
   subheading,
+  logoUrl,
   children,
 }: {
   heading: string;
   subheading: string;
+  logoUrl?: string | null;
   children: React.ReactNode;
 }) {
   return (
@@ -21,13 +24,8 @@ export function AuthSplitLayout({
         <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-orange/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -right-16 h-80 w-80 rounded-full bg-navy-600/50 blur-3xl" />
 
-        <div className="relative z-10 flex items-center gap-1.5 select-none">
-          <span className="text-xl font-extrabold tracking-tight text-white">TEK</span>
-          <span aria-hidden className="grid h-6 w-6 place-items-center rounded-full bg-orange">
-            <GraduationIcon className="h-3.5 w-3.5 text-white" />
-          </span>
-          <span className="text-xl font-extrabold tracking-tight text-orange">SKILL</span>
-          <span className="text-xl font-extrabold tracking-tight text-white">UP</span>
+        <div className="relative z-10">
+          <Logo src={logoUrl} variant="onDark" />
         </div>
 
         <div className="relative z-10 max-w-md">

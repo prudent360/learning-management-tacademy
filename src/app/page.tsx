@@ -6,6 +6,7 @@ import { getCourses } from "@/lib/courses-server";
 import { lessonCount } from "@/lib/courses";
 import { prisma } from "@/lib/prisma";
 import { listCoaches } from "@/app/actions/coaches";
+import { getPublicBrandingSettings } from "@/app/actions/settings";
 import { formatCurrency } from "@/lib/currency";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -84,10 +85,11 @@ export default async function HomePage() {
     redirect("/dashboard");
   }
 
-  const [courses, paymentSettings, coaches] = await Promise.all([
+  const [courses, paymentSettings, coaches, branding] = await Promise.all([
     getCourses(),
     prisma.paymentSettings.findUnique({ where: { id: 1 } }),
     listCoaches(),
+    getPublicBrandingSettings(),
   ]);
 
   const currency = paymentSettings?.currency || "NGN";
@@ -108,7 +110,7 @@ export default async function HomePage() {
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-line bg-surface/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-4 md:px-6">
-          <Logo />
+          <Logo src={branding.headerLogo} />
           <nav className="ml-8 hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
             <a href="#features" className="hover:text-navy">
               Features
@@ -325,7 +327,7 @@ export default async function HomePage() {
       {/* Footer */}
       <footer className="border-t border-line py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 text-center md:flex-row md:justify-between md:px-6 md:text-left">
-          <Logo />
+          <Logo src={branding.footerLogo} />
           <div className="flex items-center gap-6 text-sm font-medium text-muted">
             <Link href="/login" className="hover:text-navy">
               Log in

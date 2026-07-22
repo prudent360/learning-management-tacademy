@@ -478,6 +478,17 @@ export async function getBrandingSettings(): Promise<BrandingSettingsView> {
   };
 }
 
+/** Unauthenticated read for rendering the logo on public/student-facing pages — these are public brand assets, not sensitive data. */
+export async function getPublicBrandingSettings(): Promise<BrandingSettingsView> {
+  const row = await prisma.brandingSettings.findUnique({ where: { id: 1 } });
+  return {
+    headerLogo: row?.headerLogo ?? null,
+    footerLogo: row?.footerLogo ?? null,
+    dashboardLogo: row?.dashboardLogo ?? null,
+    invoiceLogo: row?.invoiceLogo ?? null,
+  };
+}
+
 export async function uploadBrandingLogoAction(
   slot: BrandingSlot,
   formData: FormData

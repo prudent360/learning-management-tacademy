@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireCoach } from "@/lib/dal";
 import { getMyCoachProfile } from "@/app/actions/coaches";
+import { getPublicBrandingSettings } from "@/app/actions/settings";
 import { Logo } from "@/components/Logo";
 import { Avatar } from "@/components/Avatar";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
@@ -8,14 +9,14 @@ import { CalendarIcon, ClockIcon } from "@/components/icons";
 
 export default async function CoachLayout({ children }: { children: React.ReactNode }) {
   await requireCoach();
-  const coach = await getMyCoachProfile();
+  const [coach, branding] = await Promise.all([getMyCoachProfile(), getPublicBrandingSettings()]);
 
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 md:px-6">
           <div className="flex items-center gap-6">
-            <Logo />
+            <Logo src={branding.dashboardLogo} />
             <nav className="flex items-center gap-1">
               <Link
                 href="/coach"

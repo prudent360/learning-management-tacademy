@@ -9,14 +9,14 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useGamification } from "@/lib/useGamification";
 import { useCurrentUser } from "@/lib/user-context";
 
-export function TopBar() {
+export function TopBar({ logoUrl }: { logoUrl?: string | null }) {
   const gamification = useGamification();
   const user = useCurrentUser();
   const firstName = user.name.split(" ")[0];
 
   return (
     <header className="sticky top-0 z-20 flex items-center gap-4 border-b border-line bg-surface px-4 py-3.5 md:px-6 lg:px-8">
-      <MobileNav />
+      <MobileNav logoUrl={logoUrl} />
 
       <div className="min-w-0">
         <p className="truncate text-sm font-bold text-slate-800">

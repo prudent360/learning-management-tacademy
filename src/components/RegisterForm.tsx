@@ -22,7 +22,7 @@ const HEAR_ABOUT_US_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-export function RegisterForm() {
+export function RegisterForm({ logoUrl }: { logoUrl?: string | null }) {
   const [state, action, pending] = useActionState(signup, undefined);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -33,6 +33,7 @@ export function RegisterForm() {
     <AuthSplitLayout
       heading="Pass your assessments with a plan, not luck."
       subheading="Join thousands of learners preparing with structured courses, timed practice exams, and real coaching."
+      logoUrl={logoUrl}
     >
       <div className="w-full max-w-md rounded-2xl bg-surface p-8 shadow-sm">
         <h1 className="text-lg font-bold text-slate-800">Create your account</h1>
