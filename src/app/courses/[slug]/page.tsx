@@ -36,7 +36,7 @@ export default async function CoursePage({
   const session = await getOptionalSession();
   const { enrolled } = session ? await checkEnrollment(slug) : { enrolled: false };
 
-  // Explicit classroom player request by enrolled user or free course player mode
+  // Explicit classroom player request by enrolled user
   if (learn === "true" && (enrolled || course.price <= 0)) {
     return <CoursePlayer course={course} />;
   }
