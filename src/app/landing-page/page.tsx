@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { listCoaches } from "@/app/actions/coaches";
 import { getPublicBrandingSettings } from "@/app/actions/settings";
 import { LandingHeader } from "@/components/LandingHeader";
+import { CourseCard } from "@/components/CourseCard";
 
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await getPublicBrandingSettings();
@@ -71,14 +72,27 @@ export default async function LandingPage() {
   const siteName = branding.siteName || "TekSkillUp";
 
   const displayCourses =
-    dbCourses.length >= 3
-      ? dbCourses.map((c, i) => ({
-          slug: c.slug,
-          title: c.title,
-          description: c.subtitle || MOCK_COURSES[i % MOCK_COURSES.length].description,
-          image: c.cover && (c.cover.startsWith("/") || c.cover.startsWith("http")) ? c.cover : MOCK_COURSES[i % MOCK_COURSES.length].image,
-        }))
-      : MOCK_COURSES;
+    dbCourses.length > 0
+      ? dbCourses
+      : MOCK_COURSES.map((m) => ({
+          slug: m.slug,
+          title: m.title,
+          subtitle: m.description,
+          category: "Tech Training",
+          instructor: "TekSkillUp Tutors",
+          cover: m.image,
+          description: m.description,
+          price: 0,
+          modules: [
+            {
+              id: "m1",
+              title: `Introduction to ${m.title}`,
+              lessons: [
+                { id: "l1", dbId: "l1", title: "Course Overview & Key Concepts", type: "video" as const, duration: 15, content: [] },
+              ],
+            },
+          ],
+        }));
 
   return (
     <div className="min-h-screen bg-background font-sans text-slate-800 antialiased selection:bg-[#FF4712]/20 selection:text-[#FF4712]">
@@ -203,33 +217,13 @@ export default async function LandingPage() {
             <h2 className="text-3xl font-extrabold text-[#1A3D4B] md:text-4xl">Certified Tech Training Courses</h2>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {displayCourses.map((course) => (
-              <div
+              <CourseCard
                 key={course.slug}
-                className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-lg transition-all"
-              >
-                <div className="h-48 overflow-hidden bg-slate-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={course.image} alt={course.title} className="h-full w-full object-cover" />
-                </div>
-                <div className="flex flex-1 flex-col justify-between p-6">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">{course.title}</h3>
-                    <p className="mt-2 text-xs text-slate-600 leading-relaxed line-clamp-3">
-                      {course.description}
-                    </p>
-                  </div>
-                  <div className="mt-6 pt-4 border-t border-slate-100">
-                    <Link
-                      href="/register"
-                      className="block w-full rounded-lg border border-[#FF4712] py-2 text-center text-xs font-bold text-[#FF4712] hover:bg-[#FF4712] hover:text-white transition-colors"
-                    >
-                      View Course
-                    </Link>
-                  </div>
-                </div>
-              </div>
+                course={course as any}
+                currency={paymentSettings?.currency || "NGN"}
+              />
             ))}
           </div>
         </div>
