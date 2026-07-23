@@ -3,83 +3,64 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getOptionalSession } from "@/lib/dal";
 import { getCourses } from "@/lib/courses-server";
-import { lessonCount } from "@/lib/courses";
 import { prisma } from "@/lib/prisma";
 import { listCoaches } from "@/app/actions/coaches";
 import { getPublicBrandingSettings } from "@/app/actions/settings";
-import { formatCurrency } from "@/lib/currency";
 import { Logo } from "@/components/Logo";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import {
-  AptitudeIcon,
-  InterviewIcon,
-  PersonalityIcon,
-  CoachIcon,
-  TrophyIcon,
-  GraduationIcon,
-  CheckCircleIcon,
-  ArrowRightIcon,
-  ClipboardIcon,
-} from "@/components/icons";
 
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await getPublicBrandingSettings();
   const siteName = branding.siteName || "TekSkillUp";
   return {
-    title: `${siteName} — Ace Your Aptitude Tests, Interviews & Career Assessments`,
+    title: `${siteName} — Unlock Your Tech Potential With Us Today`,
     description:
-      "Practice exams, interview coaching, personality profiling, and 1:1 coach sessions — everything you need to pass career assessments with confidence.",
+      "Transform Your Career and Become a Skilled Tech Professional by Enrolling with TekSkillUp.",
   };
 }
 
-const features = [
+// Fallback courses matching the exact reference design cards if database has fewer courses
+const MOCK_COURSES = [
   {
-    icon: AptitudeIcon,
-    title: "Practice Exams",
+    slug: "product-design-ui-ux",
+    title: "Product Design UI/UX",
     description:
-      "Timed mock tests across numerical, verbal, mechanical, spatial, and critical reasoning — the same categories employers actually use.",
+      "Learn to design and deliver digital products that serve clients' needs and solve users' problems. Understand the fundamentals and tools of design.",
+    image: "/images/landing/hero-classroom.png",
   },
   {
-    icon: InterviewIcon,
-    title: "Interview Formula",
+    slug: "full-stack-development",
+    title: "Full Stack Development",
     description:
-      "A repeatable system for structuring answers, staying composed under pressure, and turning interviews into offers.",
+      "We teach the important skills required to jumpstart your career as a web developer. With 24 intense weeks of hands-on training.",
+    image: "/images/landing/facility-classroom.png",
   },
   {
-    icon: PersonalityIcon,
-    title: "Personality Profiling",
+    slug: "data-science",
+    title: "Data Science",
     description:
-      "Understand how workplace personality questionnaires assess you, and how to present your natural strengths.",
+      "Learn to build predictive models, understand data visualisation and pattern recognition. You'll learn to use leading methods to wrangle large data sets.",
+    image: "/images/landing/hero-classroom.png",
   },
   {
-    icon: CoachIcon,
-    title: "1:1 Coach Sessions",
-    description: "Book real time with aptitude, interview, and careers coaches for scored, actionable feedback.",
+    slug: "frontend-development",
+    title: "Frontend Development",
+    description:
+      "Master modern HTML, CSS, JavaScript, React, and responsive web design to build interactive user interfaces.",
+    image: "/images/landing/facility-classroom.png",
   },
   {
-    icon: TrophyIcon,
-    title: "Gamified Progress",
-    description: "XP, streaks, levels, and badges keep you consistent — with a leaderboard to keep you sharp.",
+    slug: "cybersecurity",
+    title: "Cybersecurity",
+    description:
+      "Learn to defend networks, audit infrastructure security, and mitigate cyber threats with industry standard frameworks.",
+    image: "/images/landing/hero-classroom.png",
   },
   {
-    icon: GraduationIcon,
-    title: "Verifiable Certificates",
-    description: "Earn a shareable certificate on completion, with a public verification page employers can trust.",
-  },
-];
-
-const steps = [
-  {
-    title: "Create your account",
-    description: "Sign up in under a minute — no card required to start with free courses.",
-  },
-  {
-    title: "Practice with purpose",
-    description: "Work through courses and timed practice exams built around real assessment categories.",
-  },
-  {
-    title: "Walk in ready",
-    description: "Book a coach for final prep, then walk into your assessment or interview with confidence.",
+    slug: "digital-marketing",
+    title: "Digital Marketing",
+    description:
+      "Develop growth strategies, optimize marketing campaigns, manage social channels, and master SEO & analytics.",
+    image: "/images/landing/facility-classroom.png",
   },
 ];
 
@@ -89,261 +70,465 @@ export default async function HomePage() {
     redirect("/dashboard");
   }
 
-  const [courses, paymentSettings, coaches, branding] = await Promise.all([
+  const [dbCourses, paymentSettings, coaches, branding] = await Promise.all([
     getCourses(),
     prisma.paymentSettings.findUnique({ where: { id: 1 } }),
     listCoaches(),
     getPublicBrandingSettings(),
   ]);
 
-  const currency = paymentSettings?.currency || "NGN";
-  const totalLessons = courses.reduce((sum, c) => sum + lessonCount(c), 0);
-  const categories = Array.from(new Set(courses.map((c) => c.category)));
-  const bookableCoaches = coaches.filter((m) => m.bookable);
-  const coachCount = bookableCoaches.length;
+  const siteName = branding.siteName || "TekSkillUp";
 
-  const stats = [
-    { label: "Courses", value: courses.length },
-    { label: "Lessons", value: `${totalLessons}+` },
-    { label: "Exam categories", value: categories.length },
-    { label: "Expert coaches", value: coachCount },
-  ];
+  // Combine real database courses with fallback cards so the grid is rich & complete
+  const displayCourses =
+    dbCourses.length >= 3
+      ? dbCourses.map((c, i) => ({
+          slug: c.slug,
+          title: c.title,
+          description: c.subtitle || MOCK_COURSES[i % MOCK_COURSES.length].description,
+          image: MOCK_COURSES[i % MOCK_COURSES.length].image,
+        }))
+      : MOCK_COURSES;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-line bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-4 md:px-6">
-          <Logo src={branding.headerLogo} siteName={branding.siteName} />
-          <nav className="ml-8 hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
-            <a href="#features" className="hover:text-navy">
-              Features
+    <div className="min-h-screen bg-background font-sans text-slate-800 antialiased selection:bg-orange/20 selection:text-orange">
+      {/* ------------------------------------------------------------- */}
+      {/* HEADER NAVIGATION */}
+      {/* ------------------------------------------------------------- */}
+      <header className="sticky top-0 z-40 bg-[#022e75] border-b border-blue-900/60 shadow-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
+          <Link href="/" className="flex items-center gap-2">
+            <Logo src={branding.headerLogo} siteName={siteName} variant="onDark" />
+          </Link>
+
+          <nav className="hidden items-center gap-8 text-sm font-semibold text-white/90 md:flex">
+            <a href="#about" className="transition-colors hover:text-white">
+              About Us
             </a>
-            <a href="#courses" className="hover:text-navy">
+            <a href="#courses" className="flex items-center gap-1 transition-colors hover:text-white">
               Courses
+              <svg className="h-4 w-4 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </a>
-            <a href="#coaches" className="hover:text-navy">
-              Coaches
+            <a href="#contact" className="transition-colors hover:text-white">
+              Contact Us
+            </a>
+            <a href="#faq" className="transition-colors hover:text-white">
+              FAQ
             </a>
           </nav>
-          <div className="ml-auto flex items-center gap-3">
-            <ThemeToggle />
+
+          <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:text-navy"
+              className="rounded-lg bg-[#0066ff] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all hover:bg-blue-600 active:scale-[0.98]"
             >
-              Log in
+              Log In
             </Link>
             <Link
               href="/register"
-              className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-navy-700"
+              className="rounded-lg px-4 py-2 text-sm font-bold text-white transition-colors hover:text-white/80"
             >
-              Get Started
+              Register
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24">
-        <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-block rounded-full bg-orange-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-orange-600">
-            Career Readiness Platform
-          </span>
-          <h1 className="mt-5 text-4xl font-extrabold leading-tight text-slate-800 md:text-5xl">
-            Pass your aptitude tests, interviews, and career assessments —{" "}
-            <span className="text-navy">with a plan, not luck.</span>
-          </h1>
-          <p className="mt-5 text-lg text-muted">
-            TekSkillUp combines structured courses, timed practice exams, and 1:1 coaching so you walk into every
-            assessment already having done the reps.
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              href="/register"
-              className="flex items-center gap-2 rounded-lg bg-orange px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-orange-600"
-            >
-              Start Learning Free
-              <ArrowRightIcon className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-lg border border-line bg-surface px-6 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-surface-muted"
-            >
-              I already have an account
-            </Link>
-          </div>
-        </div>
+      {/* ------------------------------------------------------------- */}
+      {/* SECTION 1: HERO BANNER */}
+      {/* ------------------------------------------------------------- */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#022e75] via-[#023789] to-[#0343a4] pb-20 pt-12 md:pb-28 md:pt-16 text-white">
+        <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-blue-400/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-32 top-1/2 h-96 w-96 rounded-full bg-orange/15 blur-3xl" />
 
-        <div className="mx-auto mt-14 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
-          {stats.map((s) => (
-            <div key={s.label} className="rounded-2xl border border-line bg-surface p-4 text-center">
-              <p className="text-2xl font-extrabold text-slate-800">{s.value}</p>
-              <p className="mt-1 text-xs font-medium text-muted">{s.label}</p>
+        <div className="mx-auto max-w-5xl px-4 text-center md:px-8">
+          {/* Badge */}
+          <div className="inline-flex items-center rounded-full bg-[#f6b856] px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[#091b38] shadow-sm mb-6">
+            Tech For Everyone
+          </div>
+
+          {/* Main Title */}
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl text-white leading-tight">
+            Unlock Your Tech Potential With Us Today
+          </h1>
+
+          {/* Subtitle */}
+          <p className="mx-auto mt-5 max-w-2xl text-base text-blue-100 sm:text-lg">
+            Transform Your Career and Become a Skilled Tech Professional by Enrolling with {siteName}.
+          </p>
+
+          {/* CTA */}
+          <div className="mt-8">
+            <a
+              href="#courses"
+              className="inline-block rounded-xl bg-[#0066ff] px-8 py-3.5 text-base font-bold text-white shadow-lg transition-all hover:bg-blue-600 hover:shadow-xl active:scale-[0.98]"
+            >
+              Explore Courses
+            </a>
+          </div>
+
+          {/* Hero Showcase Container & Floating Badges */}
+          <div className="relative mx-auto mt-12 max-w-4xl">
+            {/* Ambient Background Glow */}
+            <div className="absolute -inset-1.5 rounded-3xl bg-gradient-to-r from-[#f6b856] via-blue-500 to-[#f6b856] opacity-70 blur-md" />
+
+            <div className="relative overflow-hidden rounded-3xl border-4 border-[#f6b856] bg-slate-900 shadow-2xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/landing/hero-classroom.png"
+                alt="Students collaborating in modern classroom"
+                className="h-[320px] sm:h-[420px] md:h-[480px] w-full object-cover"
+              />
+
+              {/* Floating Skill Badges Overlay */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+
+              {/* Badges Around Frame */}
+              <div className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 rounded-xl bg-slate-900/80 backdrop-blur border border-white/20 px-3.5 py-1.5 text-xs font-bold text-white shadow-lg">
+                <span className="h-2.5 w-2.5 rounded-full bg-purple-400" />
+                Product Design
+              </div>
+
+              <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 rounded-xl bg-slate-900/80 backdrop-blur border border-white/20 px-3.5 py-1.5 text-xs font-bold text-white shadow-lg">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                Data Science
+              </div>
+
+              <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 flex items-center gap-2 rounded-xl bg-slate-900/80 backdrop-blur border border-white/20 px-3.5 py-1.5 text-xs font-bold text-white shadow-lg">
+                <span className="h-2.5 w-2.5 rounded-full bg-blue-400" />
+                Fullstack Development
+              </div>
+
+              <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 flex items-center gap-2 rounded-xl bg-slate-900/80 backdrop-blur border border-white/20 px-3.5 py-1.5 text-xs font-bold text-white shadow-lg">
+                <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
+                Frontend Development
+              </div>
             </div>
-          ))}
+          </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="border-t border-line bg-surface-muted/50 py-16 md:py-20">
-        <div className="mx-auto max-w-6xl px-4 md:px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-extrabold text-slate-800 md:text-3xl">Everything you need, one platform</h2>
-            <p className="mt-3 text-muted">
-              Built around how career assessments actually work — not generic study material.
+      {/* ------------------------------------------------------------- */}
+      {/* SECTION 2: WHAT SETS US APART */}
+      {/* ------------------------------------------------------------- */}
+      <section id="about" className="bg-white py-16 md:py-24">
+        <div className="mx-auto max-w-6xl px-4 md:px-8">
+          {/* Section Header */}
+          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+            <div className="max-w-xl space-y-3">
+              <div className="inline-block rounded-full bg-[#f6b856] px-3.5 py-1 text-xs font-bold text-[#091b38]">
+                What Sets Us Apart?
+              </div>
+              <h2 className="text-3xl font-extrabold text-[#022e75] md:text-4xl leading-tight">
+                Shaping Your Future with Industry-Leading Skills
+              </h2>
+            </div>
+            <div className="max-w-md space-y-4">
+              <p className="text-sm text-slate-600 leading-relaxed">
+                With six years of success, {siteName} offers expert-led training by professional tutors. Our hands-on
+                approach equips you with in-demand skills, leading to quick employment for many graduates. Join us for
+                personalized learning and a fast track to your tech career.
+              </p>
+              <a
+                href="#courses"
+                className="inline-block rounded-lg bg-[#0066ff] px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-blue-600"
+              >
+                Learn More
+              </a>
+            </div>
+          </div>
+
+          {/* Grid Layout: Student Portrait + 2x2 Stats Cards */}
+          <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-center">
+            {/* Student Portrait Card */}
+            <div className="lg:col-span-5">
+              <div className="relative overflow-hidden rounded-3xl border-4 border-[#0066ff] bg-blue-50 shadow-xl">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/landing/student-thumbsup.png"
+                  alt="Student thumbs up"
+                  className="h-[360px] sm:h-[420px] w-full object-cover object-center"
+                />
+              </div>
+            </div>
+
+            {/* 2x2 Stats Cards Grid */}
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:col-span-7">
+              <div className="rounded-2xl border border-blue-100 bg-[#eaf2ff] p-6 shadow-sm transition-transform hover:-translate-y-1">
+                <div className="text-3xl font-extrabold text-[#0066ff]">6+</div>
+                <h3 className="mt-1 text-base font-bold text-slate-900">Years of Experience</h3>
+                <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                  Over the years, we&apos;ve been known for impacting students with quality tech skills education.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-blue-100 bg-[#eaf2ff] p-6 shadow-sm transition-transform hover:-translate-y-1">
+                <div className="text-3xl font-extrabold text-[#0066ff]">5000+</div>
+                <h3 className="mt-1 text-base font-bold text-slate-900">Trained Students</h3>
+                <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                  With over 5,000 successful graduates, we&apos;ve empowered students with the skills and knowledge
+                  needed to excel in tech.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-blue-100 bg-[#eaf2ff] p-6 shadow-sm transition-transform hover:-translate-y-1">
+                <div className="text-3xl font-extrabold text-[#0066ff]">20+</div>
+                <h3 className="mt-1 text-base font-bold text-slate-900">Professional Staffs</h3>
+                <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                  &quot;Our experienced, professional instructors are committed to providing top-notch, hands-on
+                  training for student success.&quot;
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-blue-100 bg-[#eaf2ff] p-6 shadow-sm transition-transform hover:-translate-y-1">
+                <div className="text-3xl font-extrabold text-[#0066ff]">90%</div>
+                <h3 className="mt-1 text-base font-bold text-slate-900">Employment Rate</h3>
+                <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                  90% of our graduates successfully land jobs after training, a testament to the quality of our
+                  programs.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------- */}
+      {/* SECTION 3: CERTIFIED TECH TRAINING COURSES */}
+      {/* ------------------------------------------------------------- */}
+      <section id="courses" className="bg-[#eaf2ff] py-16 md:py-24 border-t border-b border-blue-100">
+        <div className="mx-auto max-w-6xl px-4 md:px-8">
+          {/* Section Heading */}
+          <div className="text-center space-y-3">
+            <div className="inline-block rounded-full bg-[#f6b856] px-3.5 py-1 text-xs font-bold text-[#091b38]">
+              Available Courses
+            </div>
+            <h2 className="text-3xl font-extrabold text-[#022e75] md:text-4xl">Certified Tech Training Courses</h2>
+            <p className="mx-auto max-w-2xl text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Explore our extensive selection of highly sought-after beginner-friendly tech courses, meticulously
+              designed to empower and inspire learners at every step of their educational journey.
             </p>
           </div>
-          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f) => (
-              <div key={f.title} className="rounded-2xl border border-line bg-surface p-6">
-                <span className="grid h-12 w-12 place-items-center rounded-xl bg-navy-50 text-navy">
-                  <f.icon className="h-6 w-6" />
-                </span>
-                <h3 className="mt-4 text-base font-bold text-slate-800">{f.title}</h3>
-                <p className="mt-1.5 text-sm text-muted">{f.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* Courses */}
-      {courses.length > 0 && (
-        <section id="courses" className="py-16 md:py-20">
-          <div className="mx-auto max-w-6xl px-4 md:px-6">
-            <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-2xl font-extrabold text-slate-800 md:text-3xl">Courses to get you there</h2>
-              <p className="mt-3 text-muted">Structured, instructor-led, and built around real assessment formats.</p>
-            </div>
-            <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {courses.map((c) => {
-                const isFree = c.price <= 0;
-                return (
-                  <div
-                    key={c.slug}
-                    className="flex flex-col overflow-hidden rounded-2xl border border-line bg-surface transition-shadow hover:shadow-md"
-                  >
-                    <div className={`h-24 bg-gradient-to-br ${c.cover} p-4`}>
-                      <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-                        {c.category}
-                      </span>
-                    </div>
-                    <div className="flex flex-1 flex-col p-5">
-                      <h3 className="text-base font-bold text-slate-800">{c.title}</h3>
-                      <p className="mt-1 text-sm text-muted">{c.subtitle}</p>
-                      <div className="mt-3 flex items-center gap-1.5 text-xs text-muted">
-                        <ClipboardIcon className="h-4 w-4" />
-                        {lessonCount(c)} lessons · {c.instructor}
-                      </div>
-                      <div className="mt-4 flex items-center justify-between">
-                        <span className="text-sm font-extrabold text-slate-800">
-                          {isFree ? "Free" : formatCurrency(c.price, currency)}
-                        </span>
-                        <Link
-                          href="/register"
-                          className="flex items-center gap-1 text-sm font-semibold text-orange hover:underline"
-                        >
-                          Get started
-                          <ArrowRightIcon className="h-3.5 w-3.5" />
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Coaches */}
-      <section id="coaches" className="border-t border-line bg-surface-muted/50 py-16 md:py-20">
-        <div className="mx-auto max-w-6xl px-4 md:px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-extrabold text-slate-800 md:text-3xl">Learn from people who've done it</h2>
-            <p className="mt-3 text-muted">Book 1:1 time with coaches who've sat on the other side of the table.</p>
-          </div>
-          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {bookableCoaches
-              .map((m) => (
-                <div key={m.id} className="rounded-2xl border border-line bg-surface p-5 text-center">
-                  <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-navy-50 text-lg font-bold text-navy">
-                    {m.name
-                      .split(" ")
-                      .map((p) => p[0])
-                      .slice(-2)
-                      .join("")}
-                  </div>
-                  <p className="mt-3 text-sm font-bold text-slate-800">{m.name}</p>
-                  <p className="text-xs font-medium text-orange">{m.role}</p>
-                  <p className="mt-1 text-xs text-muted">{m.focus}</p>
+          {/* Course Cards Grid */}
+          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {displayCourses.map((course) => (
+              <div
+                key={course.slug}
+                className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg"
+              >
+                {/* Course Image */}
+                <div className="h-48 overflow-hidden bg-slate-100 relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={course.image}
+                    alt={course.title}
+                    className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                  />
                 </div>
-              ))}
-          </div>
-        </div>
-      </section>
 
-      {/* How it works */}
-      <section className="py-16 md:py-20">
-        <div className="mx-auto max-w-4xl px-4 md:px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-extrabold text-slate-800 md:text-3xl">How it works</h2>
-          </div>
-          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
-            {steps.map((s, i) => (
-              <div key={s.title} className="rounded-2xl border border-line bg-surface p-6">
-                <span className="grid h-9 w-9 place-items-center rounded-full bg-navy text-sm font-bold text-white">
-                  {i + 1}
-                </span>
-                <h3 className="mt-4 text-base font-bold text-slate-800">{s.title}</h3>
-                <p className="mt-1.5 text-sm text-muted">{s.description}</p>
+                {/* Course Content */}
+                <div className="flex flex-1 flex-col justify-between p-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">{course.title}</h3>
+                    <p className="mt-2 text-xs text-slate-600 leading-relaxed line-clamp-3">
+                      {course.description}
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-slate-100">
+                    <Link
+                      href={`/register`}
+                      className="block w-full rounded-lg border border-[#0066ff] py-2 text-center text-xs font-bold text-[#0066ff] transition-colors hover:bg-[#0066ff] hover:text-white"
+                    >
+                      View Course
+                    </Link>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="border-t border-line py-16 md:py-20">
-        <div className="mx-auto max-w-3xl rounded-2xl bg-navy px-6 py-12 text-center md:px-12">
-          <h2 className="text-2xl font-extrabold text-white md:text-3xl">Ready to start preparing?</h2>
-          <p className="mt-3 text-white/70">Create your free account and take your first practice exam today.</p>
-          <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              href="/register"
-              className="flex items-center gap-2 rounded-lg bg-orange px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-orange-600"
-            >
-              Get Started Free
-              <ArrowRightIcon className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/verify"
-              className="flex items-center gap-2 rounded-lg border border-white/20 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-white/10"
-            >
-              <CheckCircleIcon className="h-4 w-4" />
-              Verify a certificate
-            </Link>
+      {/* ------------------------------------------------------------- */}
+      {/* SECTION 4: READY TO JOIN US? HERE'S HOW */}
+      {/* ------------------------------------------------------------- */}
+      <section className="bg-[#eaf2ff] pb-16 md:pb-24">
+        <div className="mx-auto max-w-6xl px-4 md:px-8">
+          {/* Header */}
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-10">
+            <div className="space-y-3">
+              <div className="inline-block rounded-full bg-[#f6b856] px-3.5 py-1 text-xs font-bold text-[#091b38]">
+                How to Enroll
+              </div>
+              <h2 className="text-3xl font-extrabold text-[#022e75] md:text-4xl">Ready to Join Us? Here&apos;s How</h2>
+            </div>
+            <p className="max-w-md text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Getting started at {siteName} is simple: Apply, get admitted, and dive into your classes. In just three
+              steps, you&apos;ll be on your way to mastering tech skills and launching a successful career.
+            </p>
+          </div>
+
+          {/* Dark Navy Container */}
+          <div className="rounded-3xl bg-[#091b38] p-6 md:p-10 shadow-2xl">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-center">
+              {/* Left Photo */}
+              <div className="lg:col-span-5">
+                <div className="overflow-hidden rounded-2xl border-4 border-[#f6b856] shadow-lg">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/images/landing/hero-classroom.png"
+                    alt="Students in classroom"
+                    className="h-[320px] sm:h-[380px] w-full object-cover"
+                  />
+                </div>
+              </div>
+
+              {/* Right Steps Stack */}
+              <div className="space-y-4 lg:col-span-7">
+                {/* Step 1 */}
+                <div className="flex items-start gap-4 rounded-2xl bg-white p-5 shadow-md">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#c0392b] text-white">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Apply</h3>
+                    <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+                      At {siteName} we offer a variety of courses designed to build your skills and professionally improve
+                      you. All you have to do is apply.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Step 2 */}
+                <div className="flex items-start gap-4 rounded-2xl bg-white p-5 shadow-md">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#1e1e1e] text-white">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Get Admitted</h3>
+                    <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+                      Once we confirm your payment for the program, we reserve your spot. Go through the onboarding
+                      process before the program starts.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Step 3 */}
+                <div className="flex items-start gap-4 rounded-2xl bg-white p-5 shadow-md">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#27ae60] text-white">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Start Classes</h3>
+                    <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+                      Be sure to attend the introductory classes, this will play a huge role in your subsequent learning
+                      stages. You&apos;ll participate in projects, personal tasks and group works.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-line py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 text-center md:flex-row md:justify-between md:px-6 md:text-left">
-          <Logo src={branding.footerLogo} siteName={branding.siteName} />
-          <div className="flex items-center gap-6 text-sm font-medium text-muted">
-            <Link href="/login" className="hover:text-navy">
-              Log in
-            </Link>
-            <Link href="/register" className="hover:text-navy">
-              Register
-            </Link>
-            <Link href="/verify" className="hover:text-navy">
-              Verify Certificate
-            </Link>
+      {/* ------------------------------------------------------------- */}
+      {/* SECTION 5: OUR FACILITY */}
+      {/* ------------------------------------------------------------- */}
+      <section id="faq" className="bg-[#eaf2ff] pb-16 md:pb-24">
+        <div className="mx-auto max-w-6xl px-4 md:px-8">
+          <div className="text-center space-y-3">
+            <div className="inline-block rounded-full bg-[#f6b856] px-3.5 py-1 text-xs font-bold text-[#091b38]">
+              What to Expect
+            </div>
+            <h2 className="text-3xl font-extrabold text-[#022e75] md:text-4xl">Our Facility</h2>
+            <p className="mx-auto max-w-2xl text-xs sm:text-sm text-slate-600 leading-relaxed">
+              We have put in place a very comfortable, and conducive learning facilities where you have access to
+              resources. We have also invested in unlimited internet to ensure our students don&apos;t have hindrance in
+              their learning process.
+            </p>
           </div>
-          <p className="text-xs text-muted">© {new Date().getFullYear()} {branding.siteName || "TekSkillUp"}. All rights reserved.</p>
+
+          {/* Facility Image Frame */}
+          <div className="relative mx-auto mt-10 max-w-4xl">
+            <div className="relative overflow-hidden rounded-3xl border-4 border-blue-400/40 bg-slate-900 shadow-2xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/landing/facility-classroom.png"
+                alt="Conducive Learning Facility"
+                className="h-[340px] sm:h-[440px] w-full object-cover"
+              />
+
+              {/* Floating Pill Overlay Button */}
+              <div className="absolute inset-x-0 bottom-8 flex justify-center">
+                <div className="rounded-full bg-white/95 backdrop-blur px-8 py-3 text-sm font-bold text-[#0066ff] shadow-xl border border-slate-100">
+                  Conducive Learning Environment
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------- */}
+      {/* FOOTER */}
+      {/* ------------------------------------------------------------- */}
+      <footer id="contact" className="bg-[#022e75] text-white py-12 border-t border-blue-900/60">
+        <div className="mx-auto max-w-6xl px-4 md:px-8">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+            <div className="col-span-2 sm:col-span-1 space-y-3">
+              <Logo src={branding.footerLogo} siteName={siteName} variant="onDark" />
+              <p className="text-xs text-blue-200 leading-relaxed">
+                The academy for career-ready skills — courses, coaching, and certificates in one place.
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-blue-300">Learn</p>
+              <div className="mt-3 flex flex-col gap-2 text-sm text-blue-100">
+                <a href="#courses" className="hover:text-white transition-colors">
+                  Courses
+                </a>
+                <a href="#about" className="hover:text-white transition-colors">
+                  About Us
+                </a>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-blue-300">Account</p>
+              <div className="mt-3 flex flex-col gap-2 text-sm text-blue-100">
+                <Link href="/login" className="hover:text-white transition-colors">
+                  Log In
+                </Link>
+                <Link href="/register" className="hover:text-white transition-colors">
+                  Register
+                </Link>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-blue-300">Trust</p>
+              <div className="mt-3 flex flex-col gap-2 text-sm text-blue-100">
+                <Link href="/verify" className="hover:text-white transition-colors">
+                  Verify Certificate
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-10 border-t border-blue-800/60 pt-6 text-xs text-blue-300 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>© {new Date().getFullYear()} {siteName}. All rights reserved.</p>
+            <p className="text-blue-300/80">Empowering tech professionals nationwide.</p>
+          </div>
         </div>
       </footer>
     </div>
