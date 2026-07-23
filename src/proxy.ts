@@ -21,6 +21,8 @@ export async function proxy(request: NextRequest) {
     publicPaths.has(pathname) ||
     pathname === "/verify" ||
     pathname.startsWith("/verify/") ||
+    pathname === "/courses" ||
+    pathname.startsWith("/courses/") ||
     // Webhook routes are called by payment providers with no session cookie —
     // they authenticate the request themselves via signature verification.
     pathname.startsWith("/api/webhooks/");
