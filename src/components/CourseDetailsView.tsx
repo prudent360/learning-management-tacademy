@@ -344,7 +344,7 @@ export function CourseDetailsView({
             </div>
 
             {/* Registration Card */}
-            <div className="rounded-2xl border-2 border-[#FF4712] bg-[#1A3D4B] p-6 text-white shadow-xl space-y-5">
+            <div className="rounded-2xl bg-[#1A3D4B] p-6 text-white shadow-xl space-y-5">
               <div>
                 <span className="inline-block rounded-full bg-[#FF4712] px-3 py-0.5 text-[11px] font-bold text-white uppercase">
                   Enrollment Open
