@@ -1,8 +1,48 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/dal";
 import { revalidatePath } from "next/cache";
+
+const ALLOWED_IMAGE_TYPES: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+};
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const COURSE_UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "courses");
+
+export async function uploadCourseThumbnailAction(
+  formData: FormData
+): Promise<{ success: true; path: string } | { success: false; error: string }> {
+  await requirePermission("courses:create");
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { success: false, error: "Choose an image file to upload." };
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    return { success: false, error: "Image must be 5MB or smaller." };
+  }
+  const ext = ALLOWED_IMAGE_TYPES[file.type];
+  if (!ext) {
+    return { success: false, error: "Only PNG, JPEG, or WEBP images are allowed." };
+  }
+
+  await mkdir(COURSE_UPLOAD_DIR, { recursive: true });
+  const filename = `cover-${randomUUID()}.${ext}`;
+  const bytes = Buffer.from(await file.arrayBuffer());
+  await writeFile(path.join(COURSE_UPLOAD_DIR, filename), bytes);
+  const publicPath = `/uploads/courses/${filename}`;
+
+  revalidatePath("/admin/courses");
+  revalidatePath("/");
+  revalidatePath("/landing-page");
+  return { success: true, path: publicPath };
+}
 
 export async function saveCourseAction(courseData: any) {
   const { slug, title, subtitle, category, instructor, instructorUserId, cover, description, price, modules } =

@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { saveCourseAction } from "@/app/actions/admin-content";
-import { ChevronLeftIcon, TrashIcon, BookIcon, ClipboardIcon } from "@/components/icons";
+import { saveCourseAction, uploadCourseThumbnailAction } from "@/app/actions/admin-content";
+import { ChevronLeftIcon, TrashIcon, BookIcon, ClipboardIcon, ImageIcon, UploadIcon } from "@/components/icons";
 import { currencySymbol } from "@/lib/currency";
 import type { Course } from "@/lib/courses";
 
@@ -57,8 +57,27 @@ export function CourseEditor({
   );
   const [active, setActive] = useState<ActiveSelection>({ type: "course" });
   const [saving, setSaving] = useState(false);
-
   const isNew = !initialCourse;
+
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingThumbnail, startThumbnailTransition] = useTransition();
+  const [thumbnailError, setThumbnailError] = useState<string | null>(null);
+
+  const handleThumbnailUpload = (file: File | undefined) => {
+    if (!file) return;
+    setThumbnailError(null);
+    const formData = new FormData();
+    formData.append("file", file);
+    startThumbnailTransition(async () => {
+      const result = await uploadCourseThumbnailAction(formData);
+      if (!result.success) {
+        setThumbnailError(result.error);
+        return;
+      }
+      setCourse((c: any) => ({ ...c, cover: result.path }));
+      if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
+    });
+  };
 
   const handleSave = async () => {
     if (!course.slug || !course.title) {
@@ -418,6 +437,64 @@ export function CourseEditor({
                 />
               </div>
               <span className="text-xs text-muted">Set to 0 for free courses</span>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Course Thumbnail Image
+            </label>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="relative flex h-32 w-56 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-line bg-surface-muted shadow-inner">
+                {course.cover && (course.cover.startsWith("/") || course.cover.startsWith("http")) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={course.cover}
+                    alt="Course thumbnail preview"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-slate-400">
+                    <ImageIcon className="h-8 w-8" />
+                    <span className="text-[10px]">No thumbnail uploaded</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <input
+                  ref={thumbnailInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={(e) => handleThumbnailUpload(e.target.files?.[0])}
+                />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => thumbnailInputRef.current?.click()}
+                    disabled={uploadingThumbnail}
+                    className="flex items-center gap-1.5 rounded-lg bg-[#FF4712] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#e03d0d] disabled:opacity-60"
+                  >
+                    <UploadIcon className="h-4 w-4" />
+                    {uploadingThumbnail ? "Uploading..." : "Upload Thumbnail"}
+                  </button>
+                  {course.cover && (course.cover.startsWith("/") || course.cover.startsWith("http")) && (
+                    <button
+                      type="button"
+                      onClick={() => setCourse({ ...course, cover: "from-navy to-navy-700" })}
+                      disabled={uploadingThumbnail}
+                      className="rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-100 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-muted">
+                  Upload a course image (PNG, JPEG, or WEBP up to 5MB). Reflected on the frontpage and course catalog.
+                </p>
+                {thumbnailError && <p className="text-[11px] text-red-600 font-semibold">{thumbnailError}</p>}
+              </div>
             </div>
           </div>
 

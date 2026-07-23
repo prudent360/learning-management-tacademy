@@ -86,7 +86,7 @@ export default async function HomePage() {
           slug: c.slug,
           title: c.title,
           description: c.subtitle || MOCK_COURSES[i % MOCK_COURSES.length].description,
-          image: MOCK_COURSES[i % MOCK_COURSES.length].image,
+          image: c.cover && (c.cover.startsWith("/") || c.cover.startsWith("http")) ? c.cover : MOCK_COURSES[i % MOCK_COURSES.length].image,
         }))
       : MOCK_COURSES;
 
