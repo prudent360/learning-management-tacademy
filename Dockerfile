@@ -32,6 +32,7 @@ RUN SESSION_SECRET="build-time-placeholder-overridden-at-runtime" \
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=400"
 RUN apt-get update -y && apt-get install -y --no-install-recommends openssl sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 

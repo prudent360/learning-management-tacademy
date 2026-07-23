@@ -134,6 +134,10 @@ export async function initPaymentAction(
     return initPaystackPayment({ secretKey, user, courseSlug, price, currency, reference, appUrl, userId: session.userId });
   }
 
+  if (gatewayId === "transactpay") {
+    return initTransactpayPayment({ gateway, secretKey, user, courseSlug, price, currency, reference, appUrl, userId: session.userId });
+  }
+
   return initFincraPayment({ gateway, publicKey, secretKey, user, courseSlug, price, currency, reference, appUrl, userId: session.userId });
 }
 
@@ -304,6 +308,90 @@ async function initPaystackPayment({
   }
 }
 
+async function initTransactpayPayment({
+  gateway,
+  secretKey,
+  user,
+  courseSlug,
+  price,
+  currency,
+  reference,
+  appUrl,
+  userId,
+}: {
+  gateway: PaymentGatewayRow;
+  secretKey: string;
+  user: PaymentUser;
+  courseSlug: string;
+  price: number;
+  currency: string;
+  reference: string;
+  appUrl: string;
+  userId: string;
+}): Promise<PaymentInitResult> {
+  const apiBase = gateway.mode === "live" ? "https://api.transactpay.ai" : "https://api-sandbox.transactpay.ai";
+
+  const payload = {
+    amount: price,
+    currency,
+    customer: {
+      name: user.name,
+      email: user.email,
+    },
+    reference,
+    redirectUrl: `${appUrl}/courses/${courseSlug}`,
+    metadata: {
+      courseSlug,
+      userId,
+    },
+  };
+
+  try {
+    const res = await fetch(`${apiBase}/v1/checkout/initialize`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${secretKey}`,
+        "api-key": secretKey,
+        Accept: "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    const link = data.data?.link || data.data?.authorization_url || data.link || data.authorization_url;
+
+    if (!res.ok || !link) {
+      console.error("Transactpay checkout error:", data);
+      return {
+        success: false,
+        error: data.message || "Failed to create payment link",
+      };
+    }
+
+    await prisma.payment.create({
+      data: {
+        userId,
+        courseSlug,
+        amount: price,
+        currency,
+        provider: "transactpay",
+        providerRef: reference,
+        status: "pending",
+      },
+    });
+
+    return {
+      success: true,
+      paymentLink: link,
+      reference,
+    };
+  } catch (err) {
+    console.error("Transactpay API error:", err);
+    return { success: false, error: "Payment service unavailable" };
+  }
+}
+
 // ---------- Verify Payment (called when the user lands back from checkout) ----------
 
 export type VerifyPaymentResult = { enrolled: boolean; failed?: boolean };
@@ -364,6 +452,39 @@ export async function verifyAndEnrollAction(
         }
       } catch (err) {
         console.error("Paystack verify error:", err);
+      }
+    }
+  }
+
+  if (payment.provider === "transactpay") {
+    const gateway = await prisma.paymentGateway.findUnique({ where: { id: "transactpay" } });
+    if (gateway) {
+      const apiBase = gateway.mode === "live" ? "https://api.transactpay.ai" : "https://api-sandbox.transactpay.ai";
+      const candidateKeys = [gateway.liveSecretKey, gateway.testSecretKey].filter(Boolean);
+
+      for (const secretKey of candidateKeys) {
+        try {
+          const res = await fetch(`${apiBase}/v1/checkout/verify/${encodeURIComponent(reference)}`, {
+            headers: {
+              Authorization: `Bearer ${secretKey}`,
+              "api-key": secretKey,
+              Accept: "application/json",
+            },
+          });
+          const data = await res.json();
+          const pStatus = data.data?.status || data.status;
+          if (res.ok && (pStatus === "success" || pStatus === "successful" || pStatus === "completed")) {
+            await prisma.payment.update({ where: { id: payment.id }, data: { status: "success" } });
+            await ensureEnrollment(session.userId, courseSlug);
+            return { enrolled: true };
+          }
+          if (res.ok && (pStatus === "failed" || pStatus === "declined" || pStatus === "cancelled" || pStatus === "expired")) {
+            await prisma.payment.update({ where: { id: payment.id }, data: { status: "failed" } });
+            return { enrolled: false, failed: true };
+          }
+        } catch (err) {
+          console.error("Transactpay verify error:", err);
+        }
       }
     }
   }

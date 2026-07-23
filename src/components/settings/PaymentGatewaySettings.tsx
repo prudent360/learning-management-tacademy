@@ -294,6 +294,8 @@ function GatewayCard({ initial }: { initial: GatewayView }) {
         <p className="mt-1 text-[10px] text-muted">
           {isFincra
             ? `Find this under Fincra Dashboard → Settings → Webhooks. Point it to /api/webhooks/fincra.`
+            : gatewayId === "transactpay"
+            ? `Find this under Transactpay Dashboard → Developer Settings. Point your webhook URL to /api/webhooks/transactpay.`
             : `Paystack verifies webhooks with your secret key — no separate secret needed. Point your Paystack dashboard webhook to /api/webhooks/paystack.`}
         </p>
       </div>

@@ -280,6 +280,39 @@ export async function initMembershipPaymentAction(
     },
   });
 
+  if (gatewayId === "transactpay") {
+    const apiBase = gateway.mode === "live" ? "https://api.transactpay.ai" : "https://api-sandbox.transactpay.ai";
+    try {
+      const res = await fetch(`${apiBase}/v1/checkout/initialize`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${secretKey}`,
+          "api-key": secretKey,
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          amount: plan.price,
+          currency,
+          customer: { name: user.name, email: user.email },
+          reference,
+          redirectUrl: `${appUrl}/membership`,
+          metadata: { type: "membership", planId, userId: session.userId },
+        }),
+      });
+      const data = await res.json();
+      const link = data.data?.link || data.data?.authorization_url || data.link || data.authorization_url;
+      if (!res.ok || !link) {
+        console.error("Transactpay membership init error:", data);
+        return { success: false, error: data.message || "Failed to create payment link" };
+      }
+      return { success: true, paymentLink: link, reference };
+    } catch (err) {
+      console.error("Transactpay membership init error:", err);
+      return { success: false, error: "Payment service unavailable" };
+    }
+  }
+
   if (gatewayId === "paystack") {
     const amountInSubunit = Math.round(plan.price * 100);
     try {
@@ -383,6 +416,41 @@ export async function verifyMembershipAction(reference: string): Promise<VerifyM
         }
       } catch (err) {
         console.error("Paystack membership verify error:", err);
+      }
+    }
+  }
+
+  if (sub.provider === "transactpay") {
+    const gateway = await prisma.paymentGateway.findUnique({ where: { id: "transactpay" } });
+    if (gateway) {
+      const apiBase = gateway.mode === "live" ? "https://api.transactpay.ai" : "https://api-sandbox.transactpay.ai";
+      const candidateKeys = [gateway.liveSecretKey, gateway.testSecretKey].filter(Boolean);
+
+      for (const secretKey of candidateKeys) {
+        try {
+          const res = await fetch(`${apiBase}/v1/checkout/verify/${encodeURIComponent(reference)}`, {
+            headers: {
+              Authorization: `Bearer ${secretKey}`,
+              "api-key": secretKey,
+              Accept: "application/json",
+            },
+          });
+          const data = await res.json();
+          const pStatus = data.data?.status || data.status;
+          if (res.ok && (pStatus === "success" || pStatus === "successful" || pStatus === "completed")) {
+            await activateMembership(sub.id);
+            return { active: true };
+          }
+          if (res.ok && (pStatus === "failed" || pStatus === "declined" || pStatus === "cancelled" || pStatus === "expired")) {
+            await prisma.membershipSubscription.update({
+              where: { id: sub.id },
+              data: { status: "failed" },
+            });
+            return { active: false, failed: true };
+          }
+        } catch (err) {
+          console.error("Transactpay membership verify error:", err);
+        }
       }
     }
   }
