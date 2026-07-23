@@ -6,6 +6,7 @@ import { getCourses } from "@/lib/courses-server";
 import { prisma } from "@/lib/prisma";
 import { listCoaches } from "@/app/actions/coaches";
 import { getPublicBrandingSettings } from "@/app/actions/settings";
+import { LandingHeader } from "@/components/LandingHeader";
 import { Logo } from "@/components/Logo";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -91,49 +92,7 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-background font-sans text-slate-800 antialiased selection:bg-[#FF4712]/20 selection:text-[#FF4712]">
-      {/* ------------------------------------------------------------- */}
-      {/* HEADER NAVIGATION */}
-      {/* ------------------------------------------------------------- */}
-      <header className="sticky top-0 z-40 bg-[#1A3D4B] border-b border-teal-900/60 shadow-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
-          <Link href="/" className="flex items-center gap-2">
-            <Logo src={branding.headerLogo} siteName={siteName} variant="onDark" />
-          </Link>
-
-          <nav className="hidden items-center gap-8 text-sm font-semibold text-white/90 md:flex">
-            <a href="#about" className="transition-colors hover:text-white">
-              About Us
-            </a>
-            <a href="#courses" className="flex items-center gap-1 transition-colors hover:text-white">
-              Courses
-              <svg className="h-4 w-4 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </a>
-            <a href="#contact" className="transition-colors hover:text-white">
-              Contact Us
-            </a>
-            <a href="#faq" className="transition-colors hover:text-white">
-              FAQ
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="rounded-lg bg-[#FF4712] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#e03d0d] active:scale-[0.98]"
-            >
-              Log In
-            </Link>
-            <Link
-              href="/register"
-              className="rounded-lg px-4 py-2 text-sm font-bold text-white transition-colors hover:text-white/80"
-            >
-              Register
-            </Link>
-          </div>
-        </div>
-      </header>
+      <LandingHeader headerLogo={branding.headerLogo} siteName={siteName} />
 
       {/* ------------------------------------------------------------- */}
       {/* SECTION 1: HERO BANNER */}
