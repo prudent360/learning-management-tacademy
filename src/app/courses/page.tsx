@@ -23,10 +23,10 @@ export default async function PublicCoursesCatalogPage() {
             Explore Programs
           </div>
           <h1 className="text-3xl font-extrabold text-white sm:text-4xl md:text-5xl">
-            Certified Tech Training Courses
+            Certified Tech Training Programs
           </h1>
           <p className="mx-auto max-w-2xl text-xs sm:text-sm text-teal-100/90 leading-relaxed">
-            Browse our comprehensive selection of industry-aligned tech programs. Click View Course to see curriculum, schedules, and register.
+            Browse our comprehensive selection of industry-aligned tech programs. Click View Program to see curriculum, schedules, and register.
           </p>
         </div>
       </section>
@@ -46,7 +46,7 @@ export default async function PublicCoursesCatalogPage() {
 
         {courses.length === 0 && (
           <div className="rounded-2xl bg-white p-12 text-center text-sm text-slate-500 shadow-sm border border-slate-200">
-            No courses published yet. Please check back soon!
+            No programs published yet. Please check back soon!
           </div>
         )}
       </section>

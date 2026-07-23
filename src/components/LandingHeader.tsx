@@ -38,7 +38,7 @@ export function LandingHeader({
             About Us
           </a>
           <a href="#courses" className="flex items-center gap-1 transition-colors hover:text-white">
-            Courses
+            Programs
             <svg className="h-4 w-4 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
@@ -118,7 +118,7 @@ export function LandingHeader({
             onClick={() => setOpen(false)}
             className="block rounded-lg px-3 py-2 text-white/90 transition-colors hover:bg-white/10 hover:text-white"
           >
-            Courses
+            Programs
           </a>
           <a
             href="#contact"

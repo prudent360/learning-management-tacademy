@@ -60,7 +60,7 @@ export function CourseDetailsView({
             {/* Left Content */}
             <div className="space-y-6 lg:col-span-7">
               <div className="inline-flex items-center gap-2 rounded-full bg-[#FF4712] px-4 py-1.5 text-xs font-bold text-white shadow-sm">
-                <span>{course.category || "Certified Tech Course"}</span>
+                <span>{course.category || "Certified Tech Program"}</span>
               </div>
 
               <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl text-white leading-tight">
@@ -213,9 +213,9 @@ export function CourseDetailsView({
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
           {/* Left Column: Course Overview & Curriculum */}
           <div className="space-y-12 lg:col-span-8">
-            {/* About Course */}
+            {/* About Program */}
             <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-4">
-              <h2 className="text-2xl font-extrabold text-[#1A3D4B]">Course Overview</h2>
+              <h2 className="text-2xl font-extrabold text-[#1A3D4B]">Program Overview</h2>
               <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
                 {course.description}
               </p>
@@ -325,7 +325,7 @@ export function CourseDetailsView({
             {/* Instructor Card */}
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
-                COURSE INSTRUCTOR
+                PROGRAM INSTRUCTOR
               </h3>
               <div className="flex items-center gap-3">
                 <div className="grid h-12 w-12 place-items-center rounded-full bg-[#1A3D4B] text-white font-bold text-lg">
@@ -356,7 +356,7 @@ export function CourseDetailsView({
               </div>
 
               <div className="border-t border-teal-800/80 pt-4">
-                <span className="text-[11px] font-bold text-teal-200 uppercase">Course Fee</span>
+                <span className="text-[11px] font-bold text-teal-200 uppercase">Program Fee</span>
                 <p className="text-3xl font-extrabold text-white mt-0.5">
                   {course.price > 0 ? formatCurrency(course.price, currency) : "Free"}
                 </p>

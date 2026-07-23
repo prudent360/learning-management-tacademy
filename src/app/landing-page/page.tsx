@@ -115,7 +115,7 @@ export default async function LandingPage() {
               href="#courses"
               className="inline-block rounded-xl bg-[#FF4712] px-8 py-3.5 text-base font-bold text-white shadow-lg transition-all hover:bg-[#e03d0d] active:scale-[0.98]"
             >
-              Explore Courses
+              Explore Programs
             </a>
           </div>
 
@@ -212,9 +212,9 @@ export default async function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 md:px-8">
           <div className="text-center space-y-3">
             <div className="inline-block rounded-full bg-[#FF4712] px-3.5 py-1 text-xs font-bold text-white">
-              Available Courses
+              Available Programs
             </div>
-            <h2 className="text-3xl font-extrabold text-[#1A3D4B] md:text-4xl">Certified Tech Training Courses</h2>
+            <h2 className="text-3xl font-extrabold text-[#1A3D4B] md:text-4xl">Certified Tech Training Programs</h2>
           </div>
 
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">

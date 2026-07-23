@@ -137,7 +137,7 @@ export default async function HomePage() {
               href="#courses"
               className="inline-block rounded-xl bg-[#FF4712] px-8 py-3.5 text-base font-bold text-white shadow-lg transition-all hover:bg-[#e03d0d] hover:shadow-xl active:scale-[0.98]"
             >
-              Explore Courses
+              Explore Programs
             </a>
           </div>
 
@@ -275,11 +275,11 @@ export default async function HomePage() {
           {/* Section Heading */}
           <div className="text-center space-y-3">
             <div className="inline-block rounded-full bg-[#FF4712] px-3.5 py-1 text-xs font-bold text-white">
-              Available Courses
+              Available Programs
             </div>
-            <h2 className="text-3xl font-extrabold text-[#1A3D4B] md:text-4xl">Certified Tech Training Courses</h2>
+            <h2 className="text-3xl font-extrabold text-[#1A3D4B] md:text-4xl">Certified Tech Training Programs</h2>
             <p className="mx-auto max-w-2xl text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Explore our extensive selection of highly sought-after beginner-friendly tech courses, meticulously
+              Explore our extensive selection of highly sought-after beginner-friendly tech programs, meticulously
               designed to empower and inspire learners at every step of their educational journey.
             </p>
           </div>

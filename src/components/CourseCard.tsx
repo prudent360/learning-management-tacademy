@@ -107,7 +107,7 @@ export function CourseCard({
         <div className="mt-6 pt-4 border-t border-slate-100 space-y-3">
           <div>
             <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-              COURSE PRICE
+              PROGRAM PRICE
             </p>
             <p className="text-2xl font-extrabold text-[#1A3D4B] mt-0.5">
               {course.price > 0 ? formatCurrency(course.price, currency) : "Free"}
@@ -118,7 +118,7 @@ export function CourseCard({
             href={`/courses/${course.slug}`}
             className="block w-full rounded-xl bg-[#FF4712] py-3 text-center text-sm font-bold text-white shadow-sm transition-all hover:bg-[#e03d0d] active:scale-[0.99]"
           >
-            View Course
+            View Program
           </Link>
         </div>
       </div>
