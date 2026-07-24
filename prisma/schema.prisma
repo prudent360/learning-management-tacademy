@@ -57,6 +57,8 @@ model User {
   instructedCohorts Cohort[]           @relation("CohortInstructor")
   applications      Application[]
   reviewedApplications Application[]   @relation("ApplicationReviewer")
+  attendances       Attendance[]       @relation("AttendanceStudent")
+  markedAttendances Attendance[]       @relation("AttendanceMarkedBy")
   coachProfile      Coach?             @relation("CoachAccount")
   membershipSubscriptions MembershipSubscription[]
   resetToken        String?
@@ -147,6 +149,7 @@ model Cohort {
   updatedAt          DateTime     @updatedAt
   enrollments        Enrollment[]
   applications       Application[]
+  attendances        Attendance[]
 
   @@index([courseSlug])
 }
@@ -184,6 +187,36 @@ model Application {
   reviewedBy   User?             @relation("ApplicationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   @@unique([userId, courseSlug])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+/**
+ * One row per student per class session. Sessions aren't a separate model —
+ * Cohort.schedule is free text, not structured dates — so a session is
+ * implicitly "whatever date an instructor took attendance for," created
+ * on demand rather than pre-scheduled.
+ */
+model Attendance {
+  id         String           @id @default(cuid())
+  cohortId   String
+  cohort     Cohort           @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User             @relation("AttendanceStudent", fields: [userId], references: [id], onDelete: Cascade)
+  date       DateTime         @db.Date
+  status     AttendanceStatus
+  note       String?
+  markedById String?
+  markedBy   User?            @relation("AttendanceMarkedBy", fields: [markedById], references: [id], onDelete: SetNull)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([cohortId, userId, date])
+  @@index([cohortId, date])
 }
 
 /** Canonical list of course category names, managed from /admin/categories. Course.category stores the name as a plain string (not a relation) to match this app's existing free-text pattern, kept in sync on rename. */

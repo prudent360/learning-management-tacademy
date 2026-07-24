@@ -10,6 +10,7 @@ import { getMyMembershipDiscount } from "@/app/actions/memberships";
 import { getPublicNextCohort, courseUsesCohorts } from "@/app/actions/cohorts";
 import { getMyApplication } from "@/app/actions/applications";
 import { getMyJourney } from "@/app/actions/journey";
+import { getMyAttendance } from "@/app/actions/attendance";
 import { getOptionalSession, getOptionalCurrentUser } from "@/lib/dal";
 
 export async function generateStaticParams() {
@@ -46,11 +47,14 @@ export default async function CoursePage({
 
   // Explicit classroom player request by enrolled user
   if (learn === "true" && (enrolled || course.price <= 0)) {
-    const [journey, viewer] = await Promise.all([
+    const [journey, attendance, viewer] = await Promise.all([
       enrolled ? getMyJourney(slug) : Promise.resolve(null),
+      enrolled ? getMyAttendance(slug) : Promise.resolve(null),
       getOptionalCurrentUser(),
     ]);
-    return <CoursePlayer course={course} journey={journey} viewer={viewer} />;
+    return (
+      <CoursePlayer course={course} journey={journey} attendance={attendance} viewer={viewer} />
+    );
   }
 
   // Payment confirmation state from gateway redirect

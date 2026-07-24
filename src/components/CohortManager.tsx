@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   duplicateCohortAction,
@@ -109,6 +110,12 @@ export function CohortManager({
 
                 {canEdit && (
                   <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    <Link
+                      href={`/admin/courses/${courseSlug}/cohorts/${c.id}/attendance`}
+                      className="rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                    >
+                      Take Attendance
+                    </Link>
                     <button
                       onClick={() => setTarget({ mode: "edit", cohort: c })}
                       className="rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
