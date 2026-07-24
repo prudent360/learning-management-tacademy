@@ -24,6 +24,7 @@ import {
   TagIcon,
   ApplicationIcon,
   CohortIcon,
+  FileTextIcon,
 } from "@/components/icons";
 
 export type NavItem = {
@@ -60,6 +61,7 @@ export const navGroups: NavGroup[] = [
       { label: "Study Planner", href: "/study-planner", icon: TargetIcon },
       { label: "Practice Exams", href: "/aptitude", icon: AptitudeIcon },
       { label: "Performance", href: "/performance", icon: AnalyticsIcon },
+      { label: "CV Builder", href: "/cv-builder", icon: FileTextIcon },
     ],
   },
   {

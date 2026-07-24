@@ -64,6 +64,7 @@ model User {
   gradedSubmissions AssignmentSubmission[] @relation("SubmissionGrader")
   coachProfile      Coach?             @relation("CoachAccount")
   membershipSubscriptions MembershipSubscription[]
+  resume            Resume?
   resetToken        String?
   resetTokenExpires DateTime?
 }
@@ -605,4 +606,83 @@ model MembershipSubscription {
   plan             MembershipPlan  @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@unique([userId, planId])
+}
+
+/**
+ * A student's CV/resume, built inside the platform. Verified certificates are
+ * intentionally NOT stored here — the builder pulls them live from the real
+ * Certificate table so the CV can never show a stale or fabricated credential.
+ */
+model Resume {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline     String   @default("")
+  summary      String   @default("") @db.Text
+  phone        String   @default("")
+  location     String   @default("")
+  linkedinUrl  String   @default("")
+  githubUrl    String   @default("")
+  portfolioUrl String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  education  ResumeEducation[]
+  experience ResumeExperience[]
+  skills     ResumeSkill[]
+  projects   ResumeProject[]
+}
+
+model ResumeEducation {
+  id           String    @id @default(cuid())
+  resumeId     String
+  resume       Resume    @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  school       String
+  degree       String    @default("")
+  fieldOfStudy String    @default("")
+  startDate    DateTime?
+  endDate      DateTime?
+  current      Boolean   @default(false)
+  description  String    @default("") @db.Text
+  sortOrder    Int       @default(0)
+
+  @@index([resumeId])
+}
+
+model ResumeExperience {
+  id          String    @id @default(cuid())
+  resumeId    String
+  resume      Resume    @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  company     String
+  role        String
+  location    String    @default("")
+  startDate   DateTime?
+  endDate     DateTime?
+  current     Boolean   @default(false)
+  description String    @default("") @db.Text
+  sortOrder   Int       @default(0)
+
+  @@index([resumeId])
+}
+
+model ResumeSkill {
+  id        String @id @default(cuid())
+  resumeId  String
+  resume    Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  name      String
+  sortOrder Int    @default(0)
+
+  @@index([resumeId])
+}
+
+model ResumeProject {
+  id          String @id @default(cuid())
+  resumeId    String
+  resume      Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  title       String
+  url         String @default("")
+  description String @default("") @db.Text
+  sortOrder   Int    @default(0)
+
+  @@index([resumeId])
 }
