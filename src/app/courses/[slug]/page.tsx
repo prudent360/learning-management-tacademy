@@ -7,6 +7,7 @@ import { PaymentConfirming } from "@/components/PaymentConfirming";
 import { checkEnrollment } from "@/app/actions/enrollment";
 import { getPaymentConfig, getPublicBrandingSettings, getStudentCurrencyContext } from "@/app/actions/settings";
 import { getMyMembershipDiscount } from "@/app/actions/memberships";
+import { getPublicNextCohort } from "@/app/actions/cohorts";
 import { getOptionalSession } from "@/lib/dal";
 
 export async function generateStaticParams() {
@@ -66,9 +67,10 @@ export default async function CoursePage({
   }
 
   // Default view: Public Course Details Page (hero with opacity background, cohort schedule, chapter toggle accordions, register button)
-  const [paymentConfig, branding] = await Promise.all([
+  const [paymentConfig, branding, nextCohort] = await Promise.all([
     getPaymentConfig(),
     getPublicBrandingSettings(),
+    getPublicNextCohort(slug),
   ]);
 
   return (
@@ -78,6 +80,7 @@ export default async function CoursePage({
       headerLogo={branding.headerLogo}
       siteName={branding.siteName || "TekSkillUp"}
       isEnrolled={enrolled}
+      nextCohort={nextCohort}
     />
   );
 }

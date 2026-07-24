@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LandingHeader } from "@/components/LandingHeader";
 import { formatCurrency } from "@/lib/currency";
 import type { Course } from "@/lib/courses";
+import type { PublicCohortSummary } from "@/app/actions/cohorts";
 
 type CourseDetailsViewProps = {
   course: Course;
@@ -12,6 +13,7 @@ type CourseDetailsViewProps = {
   headerLogo?: string | null;
   siteName?: string;
   isEnrolled?: boolean;
+  nextCohort?: PublicCohortSummary | null;
 };
 
 export function CourseDetailsView({
@@ -20,6 +22,7 @@ export function CourseDetailsView({
   headerLogo,
   siteName = "TekSkillUp",
   isEnrolled = false,
+  nextCohort = null,
 }: CourseDetailsViewProps) {
   // Module accordion state: first module open by default
   const [openModules, setOpenModules] = useState<Record<string, boolean>>({
@@ -32,6 +35,30 @@ export function CourseDetailsView({
 
   const totalLessons = course.modules?.reduce((acc, m) => acc + (m.lessons?.length || 0), 0) || 0;
   const isImageCover = course.cover && (course.cover.startsWith("/") || course.cover.startsWith("http"));
+
+  const cohortBadgeLabel = nextCohort
+    ? nextCohort.status === "ONGOING"
+      ? "Cohort In Progress"
+      : nextCohort.enrollmentOpen
+        ? "Enrollment Open"
+        : "Upcoming Cohort"
+    : "Self-Paced";
+  const cohortStartLabel = nextCohort
+    ? new Date(nextCohort.startDate).toLocaleDateString(undefined, {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "Start anytime";
+  const cohortSubLabel = nextCohort
+    ? nextCohort.status === "ONGOING"
+      ? "This cohort has already started"
+      : nextCohort.seatsRemaining != null
+        ? `${nextCohort.seatsRemaining} seat${nextCohort.seatsRemaining === 1 ? "" : "s"} remaining`
+        : nextCohort.enrollmentOpen
+          ? "Enrollments currently open"
+          : "Enrollment opens soon"
+    : "Self-paced — learn on your own schedule";
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 antialiased selection:bg-[#FF4712]/20 selection:text-[#FF4712]">
@@ -145,7 +172,7 @@ export function CourseDetailsView({
                   <div className="p-6 bg-[#1A3D4B] text-white space-y-3">
                     <div className="flex items-center justify-between text-xs font-bold text-teal-200">
                       <span>VERIFIED CERTIFICATION</span>
-                      <span className="rounded bg-emerald-500/20 text-emerald-300 px-2 py-0.5">Active Cohort</span>
+                      <span className="rounded bg-emerald-500/20 text-emerald-300 px-2 py-0.5">{cohortBadgeLabel}</span>
                     </div>
                     <h4 className="text-base font-bold">{course.title}</h4>
                     <p className="text-xs text-teal-100 leading-relaxed line-clamp-2">
@@ -172,9 +199,11 @@ export function CourseDetailsView({
               </svg>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Next Cohort Starts</p>
-              <h4 className="text-base font-extrabold text-[#1A3D4B] mt-0.5">Upcoming Month 1st</h4>
-              <p className="text-xs text-slate-500 mt-1">Enrollments currently open</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                {nextCohort ? "Next Cohort Starts" : "Schedule"}
+              </p>
+              <h4 className="text-base font-extrabold text-[#1A3D4B] mt-0.5">{cohortStartLabel}</h4>
+              <p className="text-xs text-slate-500 mt-1">{cohortSubLabel}</p>
             </div>
           </div>
 
@@ -347,11 +376,15 @@ export function CourseDetailsView({
             <div className="rounded-2xl bg-[#1A3D4B] p-6 text-white shadow-xl space-y-5">
               <div>
                 <span className="inline-block rounded-full bg-[#FF4712] px-3 py-0.5 text-[11px] font-bold text-white uppercase">
-                  Enrollment Open
+                  {cohortBadgeLabel}
                 </span>
-                <h3 className="mt-3 text-xl font-extrabold text-white">Join the Next Cohort</h3>
+                <h3 className="mt-3 text-xl font-extrabold text-white">
+                  {nextCohort ? `Join ${nextCohort.name}` : "Enroll Today"}
+                </h3>
                 <p className="mt-1 text-xs text-teal-100">
-                  Secure your spot today and jumpstart your career in tech.
+                  {nextCohort
+                    ? `Starts ${cohortStartLabel} — ${cohortSubLabel.toLowerCase()}.`
+                    : "Secure your spot today and jumpstart your career in tech."}
                 </p>
               </div>
 

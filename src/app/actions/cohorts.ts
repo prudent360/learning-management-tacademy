@@ -38,6 +38,42 @@ export type CohortRow = {
   enrolledCount: number;
 };
 
+export type PublicCohortSummary = {
+  name: string;
+  startDate: Date;
+  status: CohortRow["status"];
+  seatsRemaining: number | null; // null = unlimited/uncapped
+  enrollmentOpen: boolean;
+};
+
+/** Unauthenticated read for the public program page — surfaces whichever cohort is most relevant to a prospective student, never COMPLETED/ARCHIVED ones. */
+export async function getPublicNextCohort(courseSlug: string): Promise<PublicCohortSummary | null> {
+  const cohorts = await prisma.cohort.findMany({
+    where: { courseSlug, status: { in: ["ENROLLMENT_OPEN", "UPCOMING", "ONGOING"] } },
+    include: { _count: { select: { enrollments: true } } },
+  });
+  if (cohorts.length === 0) return null;
+
+  const priority: Record<string, number> = { ENROLLMENT_OPEN: 0, UPCOMING: 1, ONGOING: 2 };
+  cohorts.sort((a, b) => {
+    const diff = priority[a.status] - priority[b.status];
+    if (diff !== 0) return diff;
+    // Ongoing cohorts: most recently started first. Everything else: soonest start first.
+    return a.status === "ONGOING"
+      ? b.startDate.getTime() - a.startDate.getTime()
+      : a.startDate.getTime() - b.startDate.getTime();
+  });
+
+  const best = cohorts[0];
+  return {
+    name: best.name,
+    startDate: best.startDate,
+    status: best.status,
+    seatsRemaining: best.capacity != null ? Math.max(best.capacity - best._count.enrollments, 0) : null,
+    enrollmentOpen: best.status === "ENROLLMENT_OPEN",
+  };
+}
+
 async function assertCourseAccess(courseSlug: string) {
   const admin = await requirePermission("courses:view");
   if (admin.category === "INSTRUCTOR") {
