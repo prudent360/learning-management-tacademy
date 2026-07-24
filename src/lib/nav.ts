@@ -50,7 +50,6 @@ export const navGroups: NavGroup[] = [
     title: "Main",
     items: [
       { label: "Dashboard", href: "/dashboard", icon: DashboardIcon },
-      { label: "Courses", href: "/courses", icon: BookIcon },
       { label: "My Courses", href: "/my-courses", icon: CoursesIcon },
       { label: "Membership", href: "/membership", icon: CrownIcon },
     ],
