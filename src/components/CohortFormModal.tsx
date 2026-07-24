@@ -22,19 +22,24 @@ function toDateInputValue(date: Date | null): string {
 }
 
 export function CohortFormModal({
-  courseSlug,
+  courseSlug: initialCourseSlug = "",
   cohort,
   instructors,
+  courses,
   onClose,
   onSaved,
 }: {
-  courseSlug: string;
+  courseSlug?: string;
   cohort?: CohortRow;
   instructors: { id: string; name: string }[];
+  courses?: { slug: string; title: string }[];
   onClose: () => void;
   onSaved: () => void;
 }) {
   const isNew = !cohort;
+  const [selectedSlug, setSelectedSlug] = useState(
+    cohort?.courseSlug ?? initialCourseSlug ?? (courses?.[0]?.slug ?? ""),
+  );
   const [name, setName] = useState(cohort?.name ?? "");
   const [startDate, setStartDate] = useState(toDateInputValue(cohort?.startDate ?? null));
   const [endDate, setEndDate] = useState(toDateInputValue(cohort?.endDate ?? null));
@@ -55,6 +60,12 @@ export function CohortFormModal({
 
   const handleSave = () => {
     setError(null);
+    const targetSlug = isNew ? selectedSlug : cohort.courseSlug;
+    if (isNew && !targetSlug) {
+      setError("Please select a program/course.");
+      return;
+    }
+
     startTransition(async () => {
       const input = {
         name,
@@ -69,7 +80,7 @@ export function CohortFormModal({
       };
 
       const result = isNew
-        ? await createCohortAction(courseSlug, input)
+        ? await createCohortAction(targetSlug, input)
         : await updateCohortAction(cohort.id, input);
 
       if (!result.success) {
@@ -96,6 +107,24 @@ export function CohortFormModal({
         <h2 className="text-sm font-bold text-slate-800">{isNew ? "New Cohort" : "Edit Cohort"}</h2>
 
         <div className="mt-4 space-y-4">
+          {isNew && courses && courses.length > 0 && (
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-700">Program / Course</label>
+              <select
+                value={selectedSlug}
+                onChange={(e) => setSelectedSlug(e.target.value)}
+                className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-navy"
+              >
+                <option value="" disabled>Select Program</option>
+                {courses.map((c) => (
+                  <option key={c.slug} value={c.slug}>
+                    {c.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className="mb-1 block text-xs font-semibold text-slate-700">Cohort Name</label>
             <input
