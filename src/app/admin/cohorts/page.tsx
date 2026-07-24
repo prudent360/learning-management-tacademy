@@ -100,6 +100,12 @@ export default async function AdminCohortsOverviewPage({
                 >
                   Attendance
                 </Link>
+                <Link
+                  href={`/admin/courses/${c.courseSlug}/cohorts/${c.id}/assignments`}
+                  className="rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-slate-700"
+                >
+                  Assignments
+                </Link>
               </div>
             </div>
           ))}
@@ -141,6 +147,12 @@ function CohortOverviewRow({ cohort: c }: { cohort: CohortRow }) {
             className="rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
           >
             Attendance
+          </Link>
+          <Link
+            href={`/admin/courses/${c.courseSlug}/cohorts/${c.id}/assignments`}
+            className="rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            Assignments
           </Link>
         </div>
       </td>

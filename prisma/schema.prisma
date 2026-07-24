@@ -59,6 +59,9 @@ model User {
   reviewedApplications Application[]   @relation("ApplicationReviewer")
   attendances       Attendance[]       @relation("AttendanceStudent")
   markedAttendances Attendance[]       @relation("AttendanceMarkedBy")
+  createdAssignments Assignment[]      @relation("AssignmentCreator")
+  assignmentSubmissions AssignmentSubmission[] @relation("SubmissionStudent")
+  gradedSubmissions AssignmentSubmission[] @relation("SubmissionGrader")
   coachProfile      Coach?             @relation("CoachAccount")
   membershipSubscriptions MembershipSubscription[]
   resetToken        String?
@@ -150,6 +153,7 @@ model Cohort {
   enrollments        Enrollment[]
   applications       Application[]
   attendances        Attendance[]
+  assignments        Assignment[]
 
   @@index([courseSlug])
 }
@@ -217,6 +221,65 @@ model Attendance {
 
   @@unique([cohortId, userId, date])
   @@index([cohortId, date])
+}
+
+enum SubmissionType {
+  FILE
+  GITHUB
+  PORTFOLIO
+  DRIVE
+  VIDEO
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  GRADED
+  RESUBMISSION_REQUESTED
+}
+
+/** Belongs to a Cohort (not the Course content shell) since due dates are inherently cohort-specific — two cohorts running the same program have their own timelines. */
+model Assignment {
+  id          String                 @id @default(cuid())
+  cohortId    String
+  cohort      Cohort                 @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  title       String
+  description String                 @db.Text
+  dueDate     DateTime?
+  maxScore    Int                    @default(100)
+  createdById String?
+  createdBy   User?                  @relation("AssignmentCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  submissions AssignmentSubmission[]
+
+  @@index([cohortId])
+}
+
+/**
+ * One row per student per assignment — resubmitting updates this row
+ * (and resets status to SUBMITTED) rather than creating a new one, same
+ * "one row, status transitions" pattern as Application.
+ */
+model AssignmentSubmission {
+  id           String           @id @default(cuid())
+  assignmentId String
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User             @relation("SubmissionStudent", fields: [userId], references: [id], onDelete: Cascade)
+  type         SubmissionType
+  url          String // uploaded-file path for FILE, the link itself for GITHUB/PORTFOLIO/DRIVE/VIDEO
+  note         String?          @db.Text
+  status       SubmissionStatus @default(SUBMITTED)
+  grade        Int?
+  feedback     String?          @db.Text
+  gradedById   String?
+  gradedBy     User?            @relation("SubmissionGrader", fields: [gradedById], references: [id], onDelete: SetNull)
+  gradedAt     DateTime?
+  submittedAt  DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@unique([assignmentId, userId])
 }
 
 /** Canonical list of course category names, managed from /admin/categories. Course.category stores the name as a plain string (not a relation) to match this app's existing free-text pattern, kept in sync on rename. */

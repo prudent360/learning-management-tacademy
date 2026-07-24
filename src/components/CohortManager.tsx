@@ -116,6 +116,12 @@ export function CohortManager({
                     >
                       Take Attendance
                     </Link>
+                    <Link
+                      href={`/admin/courses/${courseSlug}/cohorts/${c.id}/assignments`}
+                      className="rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                    >
+                      Assignments
+                    </Link>
                     <button
                       onClick={() => setTarget({ mode: "edit", cohort: c })}
                       className="rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"

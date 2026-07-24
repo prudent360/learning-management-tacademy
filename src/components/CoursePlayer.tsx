@@ -10,9 +10,11 @@ import { CertificateModal } from "@/components/CertificateModal";
 import { LessonDiscussion } from "@/components/LessonDiscussion";
 import { StudentJourneyTimeline } from "@/components/StudentJourneyTimeline";
 import { AttendanceSummary } from "@/components/AttendanceSummary";
+import { AssignmentsSummary } from "@/components/AssignmentsSummary";
 import { Quiz } from "@/components/Quiz";
 import type { JourneySummary } from "@/app/actions/journey";
 import type { MyAttendanceSummary } from "@/app/actions/attendance";
+import type { MyAssignmentRow } from "@/app/actions/assignments";
 import type { CurrentUser } from "@/lib/dal";
 import {
   PlayIcon,
@@ -41,11 +43,12 @@ export interface CoursePlayerProps {
   course: Course;
   journey?: JourneySummary | null;
   attendance?: MyAttendanceSummary | null;
+  assignments?: MyAssignmentRow[];
   /** Pre-fetched server-side (this page lives outside the `(app)` route group, so useCurrentUser()'s UserProvider isn't mounted here). Null for a guest previewing a free course. */
   viewer?: CurrentUser | null;
 }
 
-export function CoursePlayer({ course, journey, attendance, viewer }: CoursePlayerProps) {
+export function CoursePlayer({ course, journey, attendance, assignments, viewer }: CoursePlayerProps) {
   const flat = useMemo(() => allLessons(course), [course]);
   const total = lessonCount(course);
   const { isDone, setComplete, count, ready } = useProgress(course.slug);
@@ -233,6 +236,7 @@ export function CoursePlayer({ course, journey, attendance, viewer }: CoursePlay
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           {journey && <StudentJourneyTimeline journey={journey} />}
           {attendance && <AttendanceSummary attendance={attendance} />}
+          {assignments && assignments.length > 0 && <AssignmentsSummary assignments={assignments} />}
           <div className="rounded-2xl bg-surface p-4">
           <div className="px-2 py-2">
             <p className="text-sm font-bold text-slate-800">Course content</p>
