@@ -884,13 +884,23 @@ export function CourseEditor({
           </div>
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="rounded-lg bg-navy px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy-700 disabled:opacity-55"
-        >
-          {saving ? "Saving Changes..." : "Save Course"}
-        </button>
+        <div className="flex items-center gap-2">
+          {!isNew && (
+            <Link
+              href={`/admin/courses/${course.slug}/cohorts`}
+              className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+            >
+              Manage Cohorts
+            </Link>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="rounded-lg bg-navy px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy-700 disabled:opacity-55"
+          >
+            {saving ? "Saving Changes..." : "Save Course"}
+          </button>
+        </div>
       </div>
 
       {/* Editor Body Split Layout */}

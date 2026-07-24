@@ -54,6 +54,7 @@ model User {
   goals             Goal[]
   notifications     Notification[]
   instructedCourses Course[]           @relation("CourseInstructor")
+  instructedCohorts Cohort[]           @relation("CohortInstructor")
   coachProfile      Coach?             @relation("CoachAccount")
   membershipSubscriptions MembershipSubscription[]
   resetToken        String?
@@ -112,6 +113,38 @@ model Course {
   modules          Module[]
   enrollments      Enrollment[]
   goals            Goal[]
+  cohorts          Cohort[]
+}
+
+enum CohortStatus {
+  UPCOMING
+  ENROLLMENT_OPEN
+  ONGOING
+  COMPLETED
+  ARCHIVED
+}
+
+/** A specific timed running of a program (Course). Enrollment.cohortId is nullable so instant/self-paced enrollments (no cohort picked) keep working alongside cohort-based ones. */
+model Cohort {
+  id                 String       @id @default(cuid())
+  courseSlug         String
+  course             Course       @relation(fields: [courseSlug], references: [slug], onDelete: Cascade)
+  name               String // e.g. "January 2026 Cohort"
+  startDate          DateTime
+  endDate            DateTime
+  enrollmentDeadline DateTime?
+  orientationDate    DateTime?
+  capacity           Int? // null = unlimited
+  timezone           String       @default("UTC")
+  schedule           String       @default("") // free text, e.g. "Mon/Wed/Fri 6-8pm"
+  status             CohortStatus @default(UPCOMING)
+  instructorUserId   String?
+  instructorUser     User?        @relation("CohortInstructor", fields: [instructorUserId], references: [id], onDelete: SetNull)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  enrollments        Enrollment[]
+
+  @@index([courseSlug])
 }
 
 /** Canonical list of course category names, managed from /admin/categories. Course.category stores the name as a plain string (not a relation) to match this app's existing free-text pattern, kept in sync on rename. */
@@ -325,9 +358,11 @@ model Enrollment {
   id         String   @id @default(cuid())
   userId     String
   courseSlug String
+  cohortId   String? // nullable — self-paced/instant enrollments have no cohort
   enrolledAt DateTime @default(now())
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   course     Course   @relation(fields: [courseSlug], references: [slug], onDelete: Cascade)
+  cohort     Cohort?  @relation(fields: [cohortId], references: [id], onDelete: SetNull)
 
   @@unique([userId, courseSlug])
 }
