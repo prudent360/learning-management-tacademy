@@ -9,7 +9,9 @@ import { useGamification } from "@/lib/useGamification";
 import { useCurrentUser } from "@/lib/user-context";
 import { CertificateModal } from "@/components/CertificateModal";
 import { LessonDiscussion } from "@/components/LessonDiscussion";
+import { StudentJourneyTimeline } from "@/components/StudentJourneyTimeline";
 import { Quiz } from "@/components/Quiz";
+import type { JourneySummary } from "@/app/actions/journey";
 import {
   PlayIcon,
   BookIcon,
@@ -33,7 +35,12 @@ const typeLabel: Record<LessonType, string> = {
   quiz: "Practice quiz",
 };
 
-export function CoursePlayer({ course }: { course: Course }) {
+export interface CoursePlayerProps {
+  course: Course;
+  journey?: JourneySummary | null;
+}
+
+export function CoursePlayer({ course, journey }: CoursePlayerProps) {
   const flat = useMemo(() => allLessons(course), [course]);
   const total = lessonCount(course);
   const { isDone, setComplete, count, ready } = useProgress(course.slug);
@@ -219,7 +226,9 @@ export function CoursePlayer({ course }: { course: Course }) {
         </div>
 
         {/* Outline */}
-        <aside className="rounded-2xl bg-surface p-4 lg:sticky lg:top-24 lg:self-start">
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          {journey && <StudentJourneyTimeline journey={journey} />}
+          <div className="rounded-2xl bg-surface p-4">
           <div className="px-2 py-2">
             <p className="text-sm font-bold text-slate-800">Course content</p>
             <p className="text-xs text-muted">
@@ -246,6 +255,7 @@ export function CoursePlayer({ course }: { course: Course }) {
                 </div>
               </div>
             ))}
+          </div>
           </div>
         </aside>
       </div>

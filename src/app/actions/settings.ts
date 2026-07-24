@@ -208,24 +208,28 @@ export async function updatePaymentGateway(input: GatewayInput): Promise<ActionR
 export type CheckoutGateway = { id: GatewayId; label: string };
 
 export async function getPaymentConfig(): Promise<{ currency: string; gateways: CheckoutGateway[] }> {
-  const [settings, gateways] = await Promise.all([
-    prisma.paymentSettings.upsert({ where: { id: 1 }, update: {}, create: { id: 1 } }),
-    prisma.paymentGateway.findMany({ where: { enabled: true } }),
-  ]);
+  try {
+    const [settings, gateways] = await Promise.all([
+      prisma.paymentSettings.upsert({ where: { id: 1 }, update: {}, create: { id: 1 } }),
+      prisma.paymentGateway.findMany({ where: { enabled: true } }),
+    ]);
 
-  const currency = settings.currency;
-  const compatible = gateways.filter((g) => {
-    const list = g.currencies ? g.currencies.split(",").filter(Boolean) : [];
-    return list.length === 0 || list.includes(currency);
-  });
+    const currency = settings.currency;
+    const compatible = gateways.filter((g) => {
+      const list = g.currencies ? g.currencies.split(",").filter(Boolean) : [];
+      return list.length === 0 || list.includes(currency);
+    });
 
-  return {
-    currency,
-    gateways: compatible.map((g) => ({
-      id: g.id as GatewayId,
-      label: GATEWAY_LABELS[g.id as GatewayId] ?? g.id,
-    })),
-  };
+    return {
+      currency,
+      gateways: compatible.map((g) => ({
+        id: g.id as GatewayId,
+        label: GATEWAY_LABELS[g.id as GatewayId] ?? g.id,
+      })),
+    };
+  } catch {
+    return { currency: "NGN", gateways: [] };
+  }
 }
 
 // ---------- Currency conversion rates (display-only price estimates) ----------
@@ -289,29 +293,33 @@ export async function getStudentCurrencyContext(): Promise<{
   displayCurrency: string | null;
   rate: number | null;
 }> {
-  const session = await getOptionalSession();
-  const settings = await prisma.paymentSettings.upsert({
-    where: { id: 1 },
-    update: {},
-    create: { id: 1 },
-  });
-  const baseCurrency = settings.currency;
+  try {
+    const session = await getOptionalSession();
+    const settings = await prisma.paymentSettings.upsert({
+      where: { id: 1 },
+      update: {},
+      create: { id: 1 },
+    });
+    const baseCurrency = settings.currency;
 
-  if (!session) return { baseCurrency, displayCurrency: null, rate: null };
+    if (!session) return { baseCurrency, displayCurrency: null, rate: null };
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { country: true },
-  });
-  const targetCurrency = user?.country ? getCurrencyForCountry(user.country) : undefined;
-  if (!targetCurrency || targetCurrency === baseCurrency) {
-    return { baseCurrency, displayCurrency: null, rate: null };
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { country: true },
+    });
+    const targetCurrency = user?.country ? getCurrencyForCountry(user.country) : undefined;
+    if (!targetCurrency || targetCurrency === baseCurrency) {
+      return { baseCurrency, displayCurrency: null, rate: null };
+    }
+
+    const rateRow = await prisma.currencyRate.findUnique({ where: { code: targetCurrency } });
+    if (!rateRow) return { baseCurrency, displayCurrency: null, rate: null };
+
+    return { baseCurrency, displayCurrency: targetCurrency, rate: rateRow.rate };
+  } catch {
+    return { baseCurrency: "NGN", displayCurrency: null, rate: null };
   }
-
-  const rateRow = await prisma.currencyRate.findUnique({ where: { code: targetCurrency } });
-  if (!rateRow) return { baseCurrency, displayCurrency: null, rate: null };
-
-  return { baseCurrency, displayCurrency: targetCurrency, rate: rateRow.rate };
 }
 
 // ---------- SMTP ----------
@@ -491,18 +499,29 @@ export async function getBrandingSettings(): Promise<BrandingSettingsView> {
 
 /** Unauthenticated read for rendering the logo on public/student-facing pages — these are public brand assets, not sensitive data. */
 export async function getPublicBrandingSettings(): Promise<BrandingSettingsView> {
-  const [row, general] = await Promise.all([
-    prisma.brandingSettings.findUnique({ where: { id: 1 } }),
-    prisma.generalSettings.findUnique({ where: { id: 1 } }),
-  ]);
-  return {
-    siteName: general?.siteName ?? "TekSkillUp",
-    headerLogo: row?.headerLogo ?? null,
-    footerLogo: row?.footerLogo ?? null,
-    dashboardLogo: row?.dashboardLogo ?? null,
-    invoiceLogo: row?.invoiceLogo ?? null,
-    faviconLogo: row?.faviconLogo ?? null,
-  };
+  try {
+    const [row, general] = await Promise.all([
+      prisma.brandingSettings.findUnique({ where: { id: 1 } }),
+      prisma.generalSettings.findUnique({ where: { id: 1 } }),
+    ]);
+    return {
+      siteName: general?.siteName ?? "TekSkillUp",
+      headerLogo: row?.headerLogo ?? null,
+      footerLogo: row?.footerLogo ?? null,
+      dashboardLogo: row?.dashboardLogo ?? null,
+      invoiceLogo: row?.invoiceLogo ?? null,
+      faviconLogo: row?.faviconLogo ?? null,
+    };
+  } catch {
+    return {
+      siteName: "TekSkillUp",
+      headerLogo: null,
+      footerLogo: null,
+      dashboardLogo: null,
+      invoiceLogo: null,
+      faviconLogo: null,
+    };
+  }
 }
 
 export async function uploadBrandingLogoAction(
