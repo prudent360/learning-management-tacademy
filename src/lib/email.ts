@@ -53,3 +53,45 @@ export async function sendTemplatedEmail(
     return { success: false, error: err.message || "Failed to deliver email through SMTP." };
   }
 }
+
+/** Direct email delivery through SMTP settings without pre-created template key requirement */
+export async function sendDirectEmail({
+  to,
+  subject,
+  html,
+}: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<SendTemplatedEmailResult> {
+  const smtp = await prisma.smtpSettings.findUnique({ where: { id: 1 } });
+  if (!smtp || !smtp.host) {
+    return { success: false, error: "SMTP connection is not configured yet." };
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: smtp.host,
+      port: smtp.port,
+      secure: smtp.secure,
+      auth: {
+        user: smtp.username,
+        pass: smtp.password,
+      },
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+    });
+
+    await transporter.sendMail({
+      from: `"${smtp.fromName || 'TekSkillUp'}" <${smtp.fromEmail}>`,
+      to,
+      subject,
+      html,
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    console.error(`SMTP direct email failure:`, err);
+    return { success: false, error: err.message || "Failed to deliver email." };
+  }
+}

@@ -16,6 +16,8 @@ import {
 import { AnalyticsIcon, ClockIcon, TrophyIcon, CheckIcon } from "@/components/icons";
 import type { ExamPerformance } from "@/app/actions/exam-performance";
 
+import Link from "next/link";
+
 function formatDuration(seconds: number) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -255,7 +257,8 @@ export function ExamPerformanceView({ data }: { data: ExamPerformance }) {
                     <th className="pb-2 pr-4">Category</th>
                     <th className="pb-2 pr-4">Date</th>
                     <th className="pb-2 pr-4">Time Spent</th>
-                    <th className="pb-2 text-right">Score</th>
+                    <th className="pb-2 pr-4 text-center">Score</th>
+                    <th className="pb-2 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -269,7 +272,7 @@ export function ExamPerformanceView({ data }: { data: ExamPerformance }) {
                           {formatDuration(a.timeSpentSeconds)}
                         </span>
                       </td>
-                      <td className="py-2.5 text-right">
+                      <td className="py-2.5 pr-4 text-center">
                         <span
                           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
                             a.passed
@@ -280,6 +283,14 @@ export function ExamPerformanceView({ data }: { data: ExamPerformance }) {
                           {a.passed && <CheckIcon className="h-3 w-3" />}
                           {a.scorePercent}%
                         </span>
+                      </td>
+                      <td className="py-2.5 text-right">
+                        <Link
+                          href={`/aptitude/practice-exam?category=${a.categorySlug}`}
+                          className="inline-flex items-center gap-1 rounded-lg border border-line bg-surface px-2.5 py-1 text-xs font-semibold text-navy transition-colors hover:bg-slate-50"
+                        >
+                          Practice Again
+                        </Link>
                       </td>
                     </tr>
                   ))}

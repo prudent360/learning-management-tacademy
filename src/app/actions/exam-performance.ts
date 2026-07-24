@@ -23,6 +23,7 @@ export type CategoryPerformance = {
 
 export type RecentAttempt = {
   id: string;
+  categorySlug: string;
   category: string;
   scorePercent: number;
   timeSpentSeconds: number;
@@ -123,6 +124,7 @@ export async function getExamPerformance(): Promise<ExamPerformance> {
     .reverse()
     .map((a) => ({
       id: a.id,
+      categorySlug: a.examSlug,
       category: categoryName.get(a.examSlug) ?? a.examSlug,
       scorePercent: a.scorePercent,
       timeSpentSeconds: a.timeSpentSeconds,

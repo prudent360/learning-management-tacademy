@@ -46,6 +46,12 @@ export async function enrollFreeAction(
   const session = await verifySession();
   if (!session) return { success: false, error: "Not authenticated" };
 
+  const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { emailVerified: true } });
+  if (!user) return { success: false, error: "User not found" };
+  if (!user.emailVerified) {
+    return { success: false, error: "Please verify your email address before enrolling in courses." };
+  }
+
   const course = await prisma.course.findUnique({ where: { slug: courseSlug } });
   if (!course) return { success: false, error: "Course not found" };
   if (course.price > 0) return { success: false, error: "This course requires payment" };
@@ -135,6 +141,9 @@ export async function initPaymentAction(
 
   const user = await prisma.user.findUnique({ where: { id: session.userId } });
   if (!user) return { success: false, error: "User not found" };
+  if (!user.emailVerified) {
+    return { success: false, error: "Please verify your email address before purchasing courses." };
+  }
 
   const reference = `TSU-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
   const appUrl = await getAppUrl();

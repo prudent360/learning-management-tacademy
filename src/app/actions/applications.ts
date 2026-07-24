@@ -190,6 +190,8 @@ async function assertApplicationAccess(id: string) {
   return { admin, application };
 }
 
+import { sendDirectEmail } from "@/lib/email";
+
 export async function admitApplicationAction(id: string): Promise<ActionResult> {
   const { admin, application } = await assertApplicationAccess(id);
   if (!application) return { success: false, error: "Application not found." };
@@ -200,6 +202,11 @@ export async function admitApplicationAction(id: string): Promise<ActionResult> 
   await prisma.application.update({
     where: { id },
     data: { status: "ADMITTED", reviewedById: admin.id, reviewedAt: new Date() },
+  });
+
+  const applicant = await prisma.user.findUnique({
+    where: { id: application.userId },
+    select: { email: true, name: true },
   });
 
   if (course.price <= 0) {
@@ -218,6 +225,20 @@ export async function admitApplicationAction(id: string): Promise<ActionResult> 
       `You're admitted to ${course.title}! Complete payment to secure your seat.`,
       `/courses/${application.courseSlug}?checkout=true`,
     );
+  }
+
+  if (applicant?.email) {
+    const isFree = course.price <= 0;
+    await sendDirectEmail({
+      to: applicant.email,
+      subject: `Congratulations! You've been admitted to ${course.title}`,
+      html: `<div style="font-family: sans-serif; padding: 20px; line-height: 1.5;">
+        <h2 style="color: #1e3a8a;">Congratulations, ${applicant.name}!</h2>
+        <p>We are pleased to inform you that your application for <strong>${course.title}</strong> has been <span style="color:#16a34a; font-weight:bold;">ADMITTED</span>.</p>
+        ${isFree ? '<p>Your seat is confirmed! Log in to your student dashboard to start learning.</p>' : '<p>Please log in to your student dashboard to complete payment and secure your seat.</p>'}
+        <p style="margin-top: 20px;"><a href="/courses/${application.courseSlug}" style="background-color:#1e3a8a; color:#fff; padding:10px 18px; text-decoration:none; border-radius:6px; font-weight:bold; display:inline-block;">View Program Dashboard</a></p>
+      </div>`,
+    });
   }
 
   revalidatePath("/admin/applications");
@@ -241,12 +262,31 @@ export async function rejectApplicationAction(id: string, note?: string): Promis
     },
   });
 
+  const applicant = await prisma.user.findUnique({
+    where: { id: application.userId },
+    select: { email: true, name: true },
+  });
+
   await notify(
     application.userId,
     "application",
     `Your application to ${course?.title ?? "the program"} was not successful this time.`,
     `/courses/${application.courseSlug}`,
   );
+
+  if (applicant?.email) {
+    await sendDirectEmail({
+      to: applicant.email,
+      subject: `Update regarding your application for ${course?.title || 'the program'}`,
+      html: `<div style="font-family: sans-serif; padding: 20px; line-height: 1.5;">
+        <h2>Hello ${applicant.name},</h2>
+        <p>Thank you for applying for <strong>${course?.title || 'the program'}</strong>.</p>
+        <p>After careful review, we regret to inform you that we are unable to accept your application for this cohort.</p>
+        ${note ? `<p style="background:#f3f4f6; padding:12px; border-radius:6px;"><strong>Note from Admissions Team:</strong> ${note}</p>` : ''}
+        <p>We encourage you to apply again for future cohorts!</p>
+      </div>`,
+    });
+  }
 
   revalidatePath("/admin/applications");
   revalidatePath(`/courses/${application.courseSlug}`);

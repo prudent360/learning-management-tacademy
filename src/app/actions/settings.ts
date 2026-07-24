@@ -215,7 +215,16 @@ export async function getPaymentConfig(): Promise<{ currency: string; gateways: 
     ]);
 
     const currency = settings.currency;
-    const compatible = gateways.filter((g) => {
+    const readyGateways = gateways.filter((g) => {
+      const isLive = g.mode === "live";
+      const hasSecretKey = isLive ? g.liveSecretKey.trim().length > 0 : g.testSecretKey.trim().length > 0;
+      const hasPublicKey = isLive ? g.livePublicKey.trim().length > 0 : g.testPublicKey.trim().length > 0;
+      if (!hasSecretKey) return false;
+      if (g.id === "fincra" && !hasPublicKey) return false;
+      return true;
+    });
+
+    const compatible = readyGateways.filter((g) => {
       const list = g.currencies ? g.currencies.split(",").filter(Boolean) : [];
       return list.length === 0 || list.includes(currency);
     });

@@ -250,6 +250,9 @@ export async function initMembershipPaymentAction(
     prisma.user.findUnique({ where: { id: session.userId } }),
   ]);
   if (!user) return { success: false, error: "User not found" };
+  if (!user.emailVerified) {
+    return { success: false, error: "Please verify your email address before purchasing a membership." };
+  }
 
   const { publicKey, secretKey } = gateway ? activeKeys(gateway) : { publicKey: "", secretKey: "" };
   if (!gateway || !gateway.enabled || !secretKey || (gatewayId === "fincra" && !publicKey)) {

@@ -1,6 +1,7 @@
 import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
 import { Toaster } from "@/components/Toaster";
+import { UnverifiedEmailBanner } from "@/components/UnverifiedEmailBanner";
 import { getCurrentUser } from "@/lib/dal";
 import { getPublicBrandingSettings } from "@/app/actions/settings";
 import { UserProvider } from "@/lib/user-context";
@@ -19,8 +20,11 @@ export default async function AppLayout({
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar logoUrl={branding.dashboardLogo} siteName={branding.siteName} />
           <main className="min-w-0 flex-1 p-4 md:p-6 lg:p-8">
-          <div className="mx-auto w-full max-w-6xl">{children}</div>
-        </main>
+            <div className="mx-auto w-full max-w-6xl">
+              <UnverifiedEmailBanner />
+              {children}
+            </div>
+          </main>
         </div>
         <Toaster />
       </div>
