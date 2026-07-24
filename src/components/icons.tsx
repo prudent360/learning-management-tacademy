@@ -578,4 +578,15 @@ export function ApplicationIcon(p: IconProps) {
   );
 }
 
+export function CohortIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3 20v-1a6 6 0 0 1 6-6" />
+      <circle cx="17" cy="8" r="2.5" />
+      <path d="M14.5 13a5.5 5.5 0 0 1 5.5 5.5V20" />
+    </svg>
+  );
+}
+
 

@@ -24,6 +24,7 @@ export type CohortInput = z.infer<typeof CohortSchema>;
 export type CohortRow = {
   id: string;
   courseSlug: string;
+  courseTitle?: string;
   name: string;
   startDate: Date;
   endDate: Date;
@@ -108,6 +109,38 @@ export async function listCohorts(courseSlug: string): Promise<CohortRow[]> {
   return cohorts.map((c) => ({
     id: c.id,
     courseSlug: c.courseSlug,
+    name: c.name,
+    startDate: c.startDate,
+    endDate: c.endDate,
+    enrollmentDeadline: c.enrollmentDeadline,
+    orientationDate: c.orientationDate,
+    capacity: c.capacity,
+    timezone: c.timezone,
+    schedule: c.schedule,
+    status: c.status,
+    instructorUserId: c.instructorUserId,
+    instructorName: c.instructorUser?.name ?? null,
+    enrolledCount: c._count.enrollments,
+  }));
+}
+
+/** Top-level admin overview — every cohort across every program, so admins don't have to open each course individually to find one. */
+export async function listAllCohorts(): Promise<CohortRow[]> {
+  const admin = await requirePermission("courses:view");
+  const cohorts = await prisma.cohort.findMany({
+    where: admin.category === "INSTRUCTOR" ? { course: { instructorUserId: admin.id } } : {},
+    include: {
+      course: { select: { title: true } },
+      instructorUser: { select: { name: true } },
+      _count: { select: { enrollments: true } },
+    },
+    orderBy: { startDate: "desc" },
+  });
+
+  return cohorts.map((c) => ({
+    id: c.id,
+    courseSlug: c.courseSlug,
+    courseTitle: c.course.title,
     name: c.name,
     startDate: c.startDate,
     endDate: c.endDate,
