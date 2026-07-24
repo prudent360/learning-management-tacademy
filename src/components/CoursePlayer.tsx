@@ -6,12 +6,12 @@ import type { Course, Lesson, LessonType } from "@/lib/courses";
 import { allLessons, lessonCount } from "@/lib/courses";
 import { useProgress } from "@/lib/useProgress";
 import { useGamification } from "@/lib/useGamification";
-import { useCurrentUser } from "@/lib/user-context";
 import { CertificateModal } from "@/components/CertificateModal";
 import { LessonDiscussion } from "@/components/LessonDiscussion";
 import { StudentJourneyTimeline } from "@/components/StudentJourneyTimeline";
 import { Quiz } from "@/components/Quiz";
 import type { JourneySummary } from "@/app/actions/journey";
+import type { CurrentUser } from "@/lib/dal";
 import {
   PlayIcon,
   BookIcon,
@@ -38,14 +38,15 @@ const typeLabel: Record<LessonType, string> = {
 export interface CoursePlayerProps {
   course: Course;
   journey?: JourneySummary | null;
+  /** Pre-fetched server-side (this page lives outside the `(app)` route group, so useCurrentUser()'s UserProvider isn't mounted here). Null for a guest previewing a free course. */
+  viewer?: CurrentUser | null;
 }
 
-export function CoursePlayer({ course, journey }: CoursePlayerProps) {
+export function CoursePlayer({ course, journey, viewer }: CoursePlayerProps) {
   const flat = useMemo(() => allLessons(course), [course]);
   const total = lessonCount(course);
   const { isDone, setComplete, count, ready } = useProgress(course.slug);
   const gamification = useGamification();
-  const user = useCurrentUser();
   const [showCertificate, setShowCertificate] = useState(false);
 
   const [activeId, setActiveId] = useState(flat[0]?.id);
@@ -220,7 +221,7 @@ export function CoursePlayer({ course, journey }: CoursePlayerProps) {
           {/* Discussion Comments Thread */}
           {active.dbId && (
             <div className="border-t border-line pt-6 mt-6">
-              <LessonDiscussion lessonId={active.dbId} />
+              <LessonDiscussion lessonId={active.dbId} viewer={viewer} />
             </div>
           )}
         </div>
@@ -263,7 +264,7 @@ export function CoursePlayer({ course, journey }: CoursePlayerProps) {
         <CertificateModal
           courseSlug={course.slug}
           courseTitle={course.title}
-          studentName={user.certificateName ?? user.name}
+          studentName={viewer?.certificateName ?? viewer?.name ?? ""}
           instructorName={course.instructor}
           onClose={() => setShowCertificate(false)}
         />

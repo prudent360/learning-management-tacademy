@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useCurrentUser } from "@/lib/user-context";
 import {
   getCommentsAction,
   addCommentAction,
@@ -9,6 +8,7 @@ import {
 } from "@/app/actions/discussion";
 import { Avatar } from "@/components/Avatar";
 import { TrashIcon } from "@/components/icons";
+import type { CurrentUser } from "@/lib/dal";
 
 type CommentData = {
   id: string;
@@ -24,10 +24,15 @@ type CommentData = {
 
 type LessonDiscussionProps = {
   lessonId: string;
+  /** Passed as a prop rather than read via useCurrentUser() — this component
+   * is also used from the public /courses/[slug] classroom, outside the
+   * `(app)` route group's UserProvider. Null for a guest previewing a free
+   * course; the compose form still renders but posting will fail server-side
+   * for a real user to notice, same as before guest preview existed. */
+  viewer?: CurrentUser | null;
 };
 
-export function LessonDiscussion({ lessonId }: LessonDiscussionProps) {
-  const user = useCurrentUser();
+export function LessonDiscussion({ lessonId, viewer }: LessonDiscussionProps) {
   const [comments, setComments] = useState<CommentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
@@ -156,8 +161,8 @@ export function LessonDiscussion({ lessonId }: LessonDiscussionProps) {
           </p>
         ) : (
           rootComments.map((comment) => {
-            const isOwner = comment.user.id === user.id;
-            const isAdmin = user.role === "ADMIN";
+            const isOwner = viewer ? comment.user.id === viewer.id : false;
+            const isAdmin = viewer?.role === "ADMIN";
             const showDelete = isOwner || isAdmin;
             const isAuthorAdmin = comment.user.role === "ADMIN";
             const commentReplies = repliesByParentId.get(comment.id) || [];
@@ -216,7 +221,7 @@ export function LessonDiscussion({ lessonId }: LessonDiscussionProps) {
                   <div className="ml-8 border-l-2 border-line/50 pl-4 space-y-3">
                     {/* Render Replies */}
                     {commentReplies.map((reply) => {
-                      const isReplyOwner = reply.user.id === user.id;
+                      const isReplyOwner = viewer ? reply.user.id === viewer.id : false;
                       const showReplyDelete = isReplyOwner || isAdmin;
                       const isReplyAuthorAdmin = reply.user.role === "ADMIN";
 
@@ -266,7 +271,7 @@ export function LessonDiscussion({ lessonId }: LessonDiscussionProps) {
                         onSubmit={(e) => handleReplySubmit(e, comment.id)}
                         className="flex gap-2 items-start pt-1.5"
                       >
-                        <Avatar name={user.name} size={28} accent="navy" />
+                        <Avatar name={viewer?.name ?? "You"} size={28} accent="navy" />
                         <div className="flex-1 space-y-1.5">
                           <textarea
                             value={replyText}
@@ -306,7 +311,7 @@ export function LessonDiscussion({ lessonId }: LessonDiscussionProps) {
 
       {/* Post comment form */}
       <form onSubmit={handleSubmit} className="flex gap-3 items-start pt-2 border-t border-line/60">
-        <Avatar name={user.name} size={32} accent="navy" />
+        <Avatar name={viewer?.name ?? "You"} size={32} accent="navy" />
         <div className="flex-1 space-y-2">
           <textarea
             value={text}

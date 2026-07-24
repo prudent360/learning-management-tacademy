@@ -50,6 +50,24 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
   return user;
 });
 
+/**
+ * Like getCurrentUser but returns null instead of redirecting — for pages
+ * outside the `(app)` route group (e.g. the public /courses/[slug] pages)
+ * where useCurrentUser()'s UserProvider isn't mounted, so components that
+ * would normally read the viewer from context need it passed as a prop
+ * instead. A guest (no session) gets null rather than a forced login.
+ */
+export const getOptionalCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+  const session = await getOptionalSession();
+  if (!session) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true, name: true, email: true, certificateName: true, role: true, category: true },
+  });
+  return user;
+});
+
 /** Redirects non-admins to "/". Use at the top of admin layouts/pages and every admin Server Action. */
 export const requireAdmin = cache(async (): Promise<CurrentUser> => {
   const user = await getCurrentUser();
