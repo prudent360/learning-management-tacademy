@@ -56,8 +56,22 @@ export async function enrollFreeAction(
   });
   if (existing) return { success: true };
 
+  // Cohort-bearing programs go through Apply -> Admit instead of instant enroll.
+  const cohortCount = await prisma.cohort.count({ where: { courseSlug } });
+  let cohortId: string | null = null;
+  if (cohortCount > 0) {
+    const application = await prisma.application.findUnique({
+      where: { userId_courseSlug: { userId: session.userId, courseSlug } },
+      select: { status: true, cohortId: true },
+    });
+    if (application?.status !== "ADMITTED") {
+      return { success: false, error: "This program requires an admitted application before enrolling." };
+    }
+    cohortId = application.cohortId;
+  }
+
   await prisma.enrollment.create({
-    data: { userId: session.userId, courseSlug },
+    data: { userId: session.userId, courseSlug, cohortId },
   });
 
   await notify(
@@ -535,8 +549,16 @@ export async function ensureEnrollment(userId: string, courseSlug: string) {
   });
 
   if (!existing) {
+    // Carry over the cohort from an admitted application, if this program uses one —
+    // callers (payment webhooks, approvePayment, free-enroll) never need to know about this.
+    const application = await prisma.application.findUnique({
+      where: { userId_courseSlug: { userId, courseSlug } },
+      select: { status: true, cohortId: true },
+    });
+    const cohortId = application?.status === "ADMITTED" ? application.cohortId : null;
+
     try {
-      await prisma.enrollment.create({ data: { userId, courseSlug } });
+      await prisma.enrollment.create({ data: { userId, courseSlug, cohortId } });
       const course = await prisma.course.findUnique({ where: { slug: courseSlug } });
       if (course) {
         await notify(

@@ -3,9 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { LandingHeader } from "@/components/LandingHeader";
+import { ApplyProgramModal } from "@/components/ApplyProgramModal";
 import { formatCurrency } from "@/lib/currency";
 import type { Course } from "@/lib/courses";
 import type { PublicCohortSummary } from "@/app/actions/cohorts";
+import type { MyApplication } from "@/app/actions/applications";
 
 type CourseDetailsViewProps = {
   course: Course;
@@ -13,7 +15,9 @@ type CourseDetailsViewProps = {
   headerLogo?: string | null;
   siteName?: string;
   isEnrolled?: boolean;
+  isLoggedIn?: boolean;
   nextCohort?: PublicCohortSummary | null;
+  myApplication?: MyApplication | null;
 };
 
 export function CourseDetailsView({
@@ -22,12 +26,15 @@ export function CourseDetailsView({
   headerLogo,
   siteName = "TekSkillUp",
   isEnrolled = false,
+  isLoggedIn = false,
   nextCohort = null,
+  myApplication = null,
 }: CourseDetailsViewProps) {
   // Module accordion state: first module open by default
   const [openModules, setOpenModules] = useState<Record<string, boolean>>({
     [course.modules[0]?.id || "m1"]: true,
   });
+  const [applying, setApplying] = useState(false);
 
   const toggleModule = (id: string) => {
     setOpenModules((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -59,6 +66,25 @@ export function CourseDetailsView({
           ? "Enrollments currently open"
           : "Enrollment opens soon"
     : "Self-paced — learn on your own schedule";
+
+  // Cohort-bearing programs go through Apply -> Admit; self-paced programs
+  // (no cohorts at all) keep the original instant register/buy flow untouched.
+  type Cta = { kind: "link" | "apply" | "disabled"; label: string; href?: string };
+  const cta: Cta = isEnrolled
+    ? { kind: "link", href: `/courses/${course.slug}?learn=true`, label: "Go to Classroom" }
+    : !nextCohort || !isLoggedIn
+      ? { kind: "link", href: `/register?course=${course.slug}`, label: "Register Now" }
+      : !myApplication
+        ? { kind: "apply", label: "Apply Now" }
+        : myApplication.status === "ADMITTED"
+          ? course.price > 0
+            ? { kind: "link", href: `/courses/${course.slug}?checkout=true`, label: "Complete Enrollment" }
+            : { kind: "link", href: `/courses/${course.slug}?learn=true`, label: "Go to Classroom" }
+          : myApplication.status === "REJECTED"
+            ? { kind: "disabled", label: "Application Not Successful" }
+            : myApplication.status === "WAITLISTED"
+              ? { kind: "disabled", label: "You're on the Waitlist" }
+              : { kind: "disabled", label: "Application Under Review" };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 antialiased selection:bg-[#FF4712]/20 selection:text-[#FF4712]">
@@ -135,26 +161,30 @@ export function CourseDetailsView({
                   </p>
                 </div>
 
-                {isEnrolled ? (
+                {cta.kind === "link" ? (
                   <Link
-                    href={`/courses/${course.slug}?learn=true`}
-                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-8 py-3.5 text-base font-bold text-white shadow-lg transition-all hover:bg-emerald-600 active:scale-[0.98]"
-                  >
-                    Go to Classroom
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </Link>
-                ) : (
-                  <Link
-                    href={`/register?course=${course.slug}`}
+                    href={cta.href!}
                     className="inline-flex items-center gap-2 rounded-xl bg-[#FF4712] px-8 py-3.5 text-base font-bold text-white shadow-lg transition-all hover:bg-[#e03d0d] active:scale-[0.98]"
                   >
-                    Register Now
+                    {cta.label}
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
                   </Link>
+                ) : cta.kind === "apply" ? (
+                  <button
+                    onClick={() => setApplying(true)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#FF4712] px-8 py-3.5 text-base font-bold text-white shadow-lg transition-all hover:bg-[#e03d0d] active:scale-[0.98]"
+                  >
+                    {cta.label}
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-8 py-3.5 text-base font-bold text-white/80">
+                    {cta.label}
+                  </span>
                 )}
               </div>
             </div>
@@ -395,25 +425,37 @@ export function CourseDetailsView({
                 </p>
               </div>
 
-              {isEnrolled ? (
+              {cta.kind === "link" ? (
                 <Link
-                  href={`/courses/${course.slug}?learn=true`}
-                  className="block w-full rounded-xl bg-emerald-500 py-3.5 text-center text-sm font-bold text-white shadow-lg transition-colors hover:bg-emerald-600"
-                >
-                  Go to Classroom
-                </Link>
-              ) : (
-                <Link
-                  href={`/register?course=${course.slug}`}
+                  href={cta.href!}
                   className="block w-full rounded-xl bg-[#FF4712] py-3.5 text-center text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#e03d0d]"
                 >
-                  Register Now
+                  {cta.label}
                 </Link>
+              ) : cta.kind === "apply" ? (
+                <button
+                  onClick={() => setApplying(true)}
+                  className="block w-full rounded-xl bg-[#FF4712] py-3.5 text-center text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#e03d0d]"
+                >
+                  {cta.label}
+                </button>
+              ) : (
+                <span className="block w-full rounded-xl bg-white/10 py-3.5 text-center text-sm font-bold text-white/80">
+                  {cta.label}
+                </span>
               )}
             </div>
           </div>
         </div>
       </section>
+
+      {applying && (
+        <ApplyProgramModal
+          courseSlug={course.slug}
+          courseTitle={course.title}
+          onClose={() => setApplying(false)}
+        />
+      )}
     </div>
   );
 }

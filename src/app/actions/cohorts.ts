@@ -38,6 +38,12 @@ export type CohortRow = {
   enrolledCount: number;
 };
 
+/** Unauthenticated existence check — a course with any cohort (even a completed/archived one) uses the apply/admit model instead of instant self-paced enrollment. */
+export async function courseUsesCohorts(courseSlug: string): Promise<boolean> {
+  const count = await prisma.cohort.count({ where: { courseSlug } });
+  return count > 0;
+}
+
 export type PublicCohortSummary = {
   name: string;
   startDate: Date;

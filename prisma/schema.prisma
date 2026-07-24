@@ -55,6 +55,8 @@ model User {
   notifications     Notification[]
   instructedCourses Course[]           @relation("CourseInstructor")
   instructedCohorts Cohort[]           @relation("CohortInstructor")
+  applications      Application[]
+  reviewedApplications Application[]   @relation("ApplicationReviewer")
   coachProfile      Coach?             @relation("CoachAccount")
   membershipSubscriptions MembershipSubscription[]
   resetToken        String?
@@ -114,6 +116,7 @@ model Course {
   enrollments      Enrollment[]
   goals            Goal[]
   cohorts          Cohort[]
+  applications     Application[]
 }
 
 enum CohortStatus {
@@ -143,8 +146,44 @@ model Cohort {
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
   enrollments        Enrollment[]
+  applications       Application[]
 
   @@index([courseSlug])
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  ADMITTED
+  REJECTED
+  WAITLISTED
+}
+
+/**
+ * Applies only to programs that have cohorts — a program with none keeps
+ * the existing instant self-paced enroll/buy flow untouched. One row per
+ * student per program: admitting/rejecting updates this row rather than
+ * creating a new one, so there's no separate "re-apply" flow yet.
+ */
+model Application {
+  id           String            @id @default(cuid())
+  userId       String
+  courseSlug   String
+  cohortId     String? // the specific cohort applied to; null = "next available"
+  status       ApplicationStatus @default(SUBMITTED)
+  motivation   String?           @db.Text
+  experience   String?           @db.Text
+  reviewNote   String?           @db.Text
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course       Course            @relation(fields: [courseSlug], references: [slug], onDelete: Cascade)
+  cohort       Cohort?           @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  reviewedBy   User?             @relation("ApplicationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, courseSlug])
 }
 
 /** Canonical list of course category names, managed from /admin/categories. Course.category stores the name as a plain string (not a relation) to match this app's existing free-text pattern, kept in sync on rename. */

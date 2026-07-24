@@ -22,6 +22,7 @@ import {
   CrownIcon,
   BookIcon,
   TagIcon,
+  ApplicationIcon,
 } from "@/components/icons";
 
 export type NavItem = {
@@ -53,6 +54,12 @@ export const adminNavItems: AdminNavItem[] = [
   { label: "Users", href: "/admin/users", icon: UserIcon, permission: "users:view" },
   { label: "Courses", href: "/admin/courses", icon: CoursesIcon, permission: "courses:view" },
   { label: "Categories", href: "/admin/categories", icon: TagIcon, permission: "categories:view" },
+  {
+    label: "Applications",
+    href: "/admin/applications",
+    icon: ApplicationIcon,
+    permission: "applications:view",
+  },
   {
     label: "Enrollments",
     href: "/admin/enrollments",
